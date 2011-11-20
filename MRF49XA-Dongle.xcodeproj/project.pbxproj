@@ -6,10 +6,17 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXFileReference section */
+		3CACE0831478A2E900CF261D /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		3CACE0841478A47700CF261D /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
 /* Begin PBXGroup section */
 		3CACE0761478A10200CF261D = {
 			isa = PBXGroup;
 			children = (
+				3CACE0831478A2E900CF261D /* main.c */,
+				3CACE0841478A47700CF261D /* license.txt */,
 			);
 			sourceTree = "<group>";
 		};
