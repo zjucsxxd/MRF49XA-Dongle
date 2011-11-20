@@ -9,6 +9,11 @@
 /* Begin PBXFileReference section */
 		3CACE0831478A2E900CF261D /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		3CACE0841478A47700CF261D /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
+		3CACE0851478A90A00CF261D /* Descriptors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Descriptors.c; sourceTree = "<group>"; };
+		3CACE0861478A90A00CF261D /* Descriptors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Descriptors.h; sourceTree = "<group>"; };
+		3CACE0871478A98A00CF261D /* VirtualSerial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = VirtualSerial.c; sourceTree = "<group>"; };
+		3CACE0881478A98A00CF261D /* VirtualSerial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VirtualSerial.h; sourceTree = "<group>"; };
+		3CACE1941478B0B800CF261D /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -17,6 +22,11 @@
 			children = (
 				3CACE0831478A2E900CF261D /* main.c */,
 				3CACE0841478A47700CF261D /* license.txt */,
+				3CACE0851478A90A00CF261D /* Descriptors.c */,
+				3CACE0861478A90A00CF261D /* Descriptors.h */,
+				3CACE0871478A98A00CF261D /* VirtualSerial.c */,
+				3CACE0881478A98A00CF261D /* VirtualSerial.h */,
+				3CACE1941478B0B800CF261D /* makefile */,
 			);
 			sourceTree = "<group>";
 		};
