@@ -26,14 +26,16 @@
 // Boston, MA  02110-1301, USA.
 //
 
+#include "MRF49XA.h"
 #include "hardware.h"
-#include "Descriptors.h"
+#include "rs8.h"
 
 #include <avr/wdt.h>
 #include <avr/sfr_defs.h>
 #include <util/delay.h>
 #include <avr/power.h>
 
+#include "Descriptors.h"
 #include <LUFA/Drivers/USB/USB.h>
 #include <LUFA/Drivers/USB/Class/Device/CDC.h>
 
@@ -107,14 +109,22 @@ void EVENT_USB_Device_ControlRequest(void)
 }
 
 #pragma mark Data management functions
-//TODO: 
-void byteFromUSB(char byte) {
-    static char inputCounter = 0;
-    static char packet[219];
-    char FEC[32];
 
+typedef struct {
+    uint8_t packet[MRF_PAYLOAD_LEN];
+    uint8_t FEC[MRF_FEC_LEN];
+} packet_t;
+
+static volatile packet_t outputPacket;
+
+bool byteFromUSB(char byte) {
+    static char inputCounter = 0;
+
+    // Toggle the LED (for debugging
+    PORTD = PORTD | LED1_RED;
+    
     // Copy the byte into the packet
-    packet[inputCounter] = byte;
+    outputPacket.packet[inputCounter] = byte;
     
     // Increment the counter
     inputCounter++;
@@ -122,13 +132,26 @@ void byteFromUSB(char byte) {
     // If the counter equals the maximum payload size,
     // calculate the FEC values and 
     // send the packet along to the transmitter
-    if (inputCounter == 219) {
+    if (inputCounter == MRF_PAYLOAD_LEN) {
+        // Encode the data using the RS 8 encoder
+        encode_rs_8(outputPacket.packet,
+                    outputPacket.FEC, 0);
+        PORTD = PORTD & ~LED1_RED;
+        inputCounter = 0;
+
+        //TODO: Send the packet to the RF stack
         
+        return true;
+    } else {
+        return false;
     }
 }
 
 int
 main(void) {
+    char byte;
+    char count;
+    
     // Enable some LEDs, just to make sure it loads
     // Other than the LEDs, port D is unused
     DDRD  = 0xFF;
@@ -139,7 +162,7 @@ main(void) {
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
     
-	// Disable prescaler
+	// Disable prescaler (the CLKDIV8 fuse is set at the factory)
 	clock_prescale_set(clock_div_1);
     
     // Initialize the USB system
@@ -152,18 +175,28 @@ main(void) {
     sei();
     
     // Main loop
-    while (true)
-    {
-        // Read a byte from the USB system
-        while (CDC_Device_ReceiveByte(&CDC_interface) > 0) {
-            // Toggle the LED (for debugging
-            PORTD = PORTD ^ LED1_RED;
-        }
+    while (true) {
+        count = CDC_Device_BytesReceived(&CDC_interface);
         
+        for (int i = 0; i < count; i++) {
+            byte = CDC_Device_ReceiveByte(&CDC_interface);
+
+            // Echo the byte back right away
+            CDC_Device_SendData(&CDC_interface, &byte, 1);
+            
+            // Give the byte to the packet maker, if it returns 'true'
+            // then send the FEC back to the host
+            if (byteFromUSB(byte)) {
+                CDC_Device_SendData(&CDC_interface,
+                                    (char *)&outputPacket.FEC,
+                                    MRF_FEC_LEN);
+            }
+        }
+
         // Both of these functions must be run at least once every 30mS
         // Using the INTERRUPT_CONTROL_ENDPOINT flag,
         // we're doing this work in an interrupt now, so we don't need this.
-//        CDC_Device_USBTask(&CDC_interface);
-//        USB_USBTask();
+        CDC_Device_USBTask(&CDC_interface);
+        USB_USBTask();
     }
 }
