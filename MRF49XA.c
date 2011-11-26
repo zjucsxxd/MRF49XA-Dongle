@@ -374,7 +374,6 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 
     // Copy the packet parts before the payload to the tx buffer
     transmit_buffer[3] = packet->type;
-    transmit_buffer[4] = packet->packetID;
 
     for (i = 0; i < 32; i++) {
         transmit_buffer[5+i] = packet->FEC[i];

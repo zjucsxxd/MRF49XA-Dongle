@@ -38,18 +38,23 @@ uint16_t MRF_statusRead(void);
 // The payload section may be smaller than the defined size.  It is possible
 // to make a custom struct that is smaller, or you may malloc an array that is
 // 34 bytes + the payload size.
+
+// These defined may be used to access the maximum payload length in the app.
+#define MRF_PAYLOAD_LEN     223
+#define MRF_FEC_LEN         32
+
 typedef struct {
     char  payloadSize;  // size of the payload field
     char  type;         // May be used to mark different types of traffic
-    char  FEC[32];      // Reed Solomon FEC for the packet
-    char  payload[223]; // actual payload
+    char  FEC[MRF_FEC_LEN];         // Reed Solomon FEC for the packet
+    char  payload[MRF_PAYLOAD_LEN]; // actual payload
 } MRF_packet_t;
 
 // These defines are used internally to the library, they include 
 // the maximum packet size for basic sanity checking, and for internal buffers
-#define MRF_PAYLOAD_LEN 256 // the maximum payload size
+#define MRF_PACKET_LEN      sizeof(MRF_packet_t)
 // Space for preamble, sync, and dummy
-#define MRF_TX_PACKET_LEN	MRF_PAYLOAD_LEN + 4
+#define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
 
 // Packet based functions
 void MRF_transmit_packet(MRF_packet_t *packet);
