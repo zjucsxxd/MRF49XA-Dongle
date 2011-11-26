@@ -44,8 +44,8 @@ uint16_t MRF_statusRead(void);
 #define MRF_FEC_LEN         32
 
 typedef struct {
-    char  payloadSize;  // size of the payload field
-    char  type;         // May be used to mark different types of traffic
+    char  payloadSize;              // size of the payload field
+    char  type;                     // for now, set to 0xBD
     char  FEC[MRF_FEC_LEN];         // Reed Solomon FEC for the packet
     char  payload[MRF_PAYLOAD_LEN]; // actual payload
 } MRF_packet_t;
