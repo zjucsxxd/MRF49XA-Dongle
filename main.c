@@ -29,6 +29,7 @@
 #include "MRF49XA.h"
 #include "hardware.h"
 #include "rs8.h"
+#include "spi.h"
 
 #include <avr/wdt.h>
 #include <avr/sfr_defs.h>
@@ -110,21 +111,15 @@ void EVENT_USB_Device_ControlRequest(void)
 
 #pragma mark Data management functions
 
-typedef struct {
-    uint8_t packet[MRF_PAYLOAD_LEN];
-    uint8_t FEC[MRF_FEC_LEN];
-} packet_t;
-
-static volatile packet_t outputPacket;
-
 bool byteFromUSB(char byte) {
     static char inputCounter = 0;
-
+    static MRF_packet_t packet;
+    
     // Toggle the LED (for debugging
     PORTD = PORTD | LED1_RED;
     
     // Copy the byte into the packet
-    outputPacket.packet[inputCounter] = byte;
+    packet.payload[inputCounter] = byte;
     
     // Increment the counter
     inputCounter++;
@@ -133,31 +128,33 @@ bool byteFromUSB(char byte) {
     // calculate the FEC values and 
     // send the packet along to the transmitter
     if (inputCounter == MRF_PAYLOAD_LEN) {
-        // Encode the data using the RS 8 encoder
-        encode_rs_8(outputPacket.packet,
-                    outputPacket.FEC, 0);
-        PORTD = PORTD & ~LED1_RED;
-        inputCounter = 0;
 
-        //TODO: Send the packet to the RF stack
+        // Encode the data using the RS 8 encoder
+        encode_rs_8(packet.payload,
+                    packet.FEC, 0);
+        PORTD = PORTD & ~LED1_RED;
+
+        // Set the payload size field
+        packet.payloadSize = inputCounter;
         
+        // Send the packet to the RF stack
+        MRF_transmit_packet(&packet);
+        
+        inputCounter = 0;
         return true;
     } else {
         return false;
     }
 }
 
-int
-main(void) {
-    char byte;
-    char count;
-    
+void
+init(void) {
     // Enable some LEDs, just to make sure it loads
     // Other than the LEDs, port D is unused
     DDRD  = 0xFF;
-
+    
     PORTD = LEDS_INIT;
-
+    
     // Disable watchdog
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
@@ -170,9 +167,23 @@ main(void) {
     
     // Create the CDC serial stream device
     CDC_Device_CreateStream(&CDC_interface, &USB_USART);
-
+    
+    // Initialize the SPI bus
+    spi_init();
+    
+    // Initialize the transceiver
+    MRF_init();
+    
     // Enable interrupts
     sei();
+}
+
+int
+main(void) {
+    char byte;
+    char count;
+    
+    init();
     
     // Main loop
     while (true) {
@@ -184,13 +195,7 @@ main(void) {
             // Echo the byte back right away
             CDC_Device_SendData(&CDC_interface, &byte, 1);
             
-            // Give the byte to the packet maker, if it returns 'true'
-            // then send the FEC back to the host
-            if (byteFromUSB(byte)) {
-                CDC_Device_SendData(&CDC_interface,
-                                    (char *)&outputPacket.FEC,
-                                    MRF_FEC_LEN);
-            }
+            byteFromUSB(byte);
         }
 
         // Both of these functions must be run at least once every 30mS
