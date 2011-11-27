@@ -18,7 +18,7 @@
 /* These defines are included for the SPI library
  *
  */ 
-//#define SOFTWARE_SPI
+#define SOFTWARE_SPI
 
 #define SPI_MISO_PORTx	PORTB
 #define SPI_MISO_PINx	PINB
@@ -43,19 +43,19 @@
 #define MRF_CS_DDRx		DDRB
 #define MRF_CS_BIT		4
 
-#define MRF_IRO_PINx	PIND
-#define MRF_IRO_PORTx	PORTD
-#define MRF_IRO_DDRx	DDRD
-#define MRF_IRO_BIT		3
-#define MRF_IRO_VECTOR	INT1_vect
+#define MRF_IRO_PINx	PINC
+#define MRF_IRO_PORTx	PORTC
+#define MRF_IRO_DDRx	DDRC
+#define MRF_IRO_BIT		7
+#define MRF_IRO_VECTOR	INT4_vect
 
 #define MRF_FSEL_PORTx	PORTD
 #define MRF_FSEL_DDRx	DDRD
 #define MRF_FSEL_BIT	2
 
-// These are the settings for the external interrupt pins
-#define MRF_INT_SETUP()	EICRA = (1 << ISC11)
-#define MRF_INT_MASK()	EIMSK = (1 << INT1)
+// These are macros for setting up the interrupts for the MRF
+#define MRF_INT_SETUP()	EICRB |= (1 << ISC41)
+#define MRF_INT_MASK()	EIMSK |= (1 << INT4)
 
 /*******************************************************************************
  * These defines set either the soldered-on characteristics of the MRF module,
