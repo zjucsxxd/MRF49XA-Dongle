@@ -43,15 +43,15 @@
 #define MRF_CS_DDRx		DDRB
 #define MRF_CS_BIT		4
 
-#define MRF_IRO_PINx	PINC
-#define MRF_IRO_PORTx	PORTC
-#define MRF_IRO_DDRx	DDRC
-#define MRF_IRO_BIT		7
-#define MRF_IRO_VECTOR	INT4_vect
+#define MRF_FSEL_PORTx	PORTB
+#define MRF_FSEL_DDRx	DDRB
+#define MRF_FSEL_BIT	5
 
-#define MRF_FSEL_PORTx	PORTD
-#define MRF_FSEL_DDRx	DDRD
-#define MRF_FSEL_BIT	2
+#define MRF_IRO_PINx	PINE
+#define MRF_IRO_PORTx	PORTE
+#define MRF_IRO_DDRx	DDRE
+#define MRF_IRO_BIT		4
+#define MRF_IRO_VECTOR	INT4_vect
 
 // These are macros for setting up the interrupts for the MRF
 #define MRF_INT_SETUP()	EICRB |= (1 << ISC41)
