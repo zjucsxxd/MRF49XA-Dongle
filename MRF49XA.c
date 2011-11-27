@@ -64,7 +64,7 @@ static inline uint8_t MRF_fifo_read(void)
 	return spi_read8();
 }
 
-static void MRF_reset(void)
+void MRF_reset(void)
 {
 	RegisterSet(MRF_PMCREG);
 	RegisterSet(MRF_FIFOSTREG_SET);
@@ -72,6 +72,7 @@ static void MRF_reset(void)
 	RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
 	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
 	RegisterSet(MRF_PMCREG | MRF_RXCEN);	
+    mrf_status = MRF_IDLE;
 }
 
 volatile uint8_t counter;
@@ -202,7 +203,7 @@ void MRF_init(void)
 	MRF_FSEL_DDRx |=  (1 << MRF_FSEL_BIT);
 	
 	// Enable the External interrupt for the IRO pin (falling edge)
-	MRF_INT_SETUP();
+    MRF_INT_SETUP();
 	
 	// configuring the MRF49XA radio
 	RegisterSet(MRF_FIFOSTREG_SET);	// Set 8 bit FIFO interrupt count

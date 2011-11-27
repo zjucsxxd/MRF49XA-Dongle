@@ -68,5 +68,5 @@ void MRF_transmit_one(void);
 void MRF_transmit_alternating(void);
 void MRF_packet_reflect(void);
 void MRF_packet_generator(void);
-void MRF_receive(void);
+void MRF_reset(void);
 
