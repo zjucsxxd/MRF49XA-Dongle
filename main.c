@@ -161,18 +161,18 @@ init(void) {
     
 	// Disable prescaler (the CLKDIV8 fuse is set at the factory)
 	clock_prescale_set(clock_div_1);
+
+    // Initialize the SPI bus
+    spi_init();
+    
+    // Initialize the transceiver
+    MRF_init();
     
     // Initialize the USB system
 	USB_Init();
     
     // Create the CDC serial stream device
     CDC_Device_CreateStream(&CDC_interface, &USB_USART);
-    
-    // Initialize the SPI bus
-    spi_init();
-    
-    // Initialize the transceiver
-    MRF_init();
     
     // Enable interrupts
     sei();
@@ -195,7 +195,24 @@ main(void) {
             // Echo the byte back right away
             CDC_Device_SendData(&CDC_interface, &byte, 1);
             
-            byteFromUSB(byte);
+            switch (byte) {
+                case 'r':
+                    MRF_reset();
+                    break;
+                case '0':
+                    MRF_transmit_zero();
+                    break;
+                case '1':
+                    MRF_transmit_one();
+                    break;
+                case 'a':
+                    MRF_transmit_alternating();
+                    break;
+                default:
+                    break;
+            }
+            
+            //            byteFromUSB(byte);
         }
 
         // Both of these functions must be run at least once every 30mS
