@@ -34,7 +34,7 @@ static volatile uint8_t mrf_state;	// Defaults to idle
 static volatile uint8_t mrf_alive;	// Set to '1' by ISR
 
 // There are 2 Rx_Packet_t instances, one for reading off the air
-// and one for processing back in main.
+// and one for processing back in main. (double buffering)
 MRF_packet_t Rx_Packet_a;
 MRF_packet_t Rx_Packet_b;
 
@@ -72,6 +72,7 @@ void MRF_reset(void)
 	RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
 	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
 	RegisterSet(MRF_PMCREG | MRF_RXCEN);	
+
     mrf_status = MRF_IDLE;
 }
 
@@ -95,20 +96,23 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 			case MRF_IDLE:
 				bl = MRF_fifo_read();
 				
-                // The first byte is the packet type feild
-                // For now, lets assume that it's a constant 0xAB
-				if (bl == 0xAB) {
+                // The first byte is the packet length
+                // the maximum length is 128
+				if (bl > 128) {
 					mrf_state = MRF_RECEIVE_PACKET;
-					receiving_packet->type = bl;
-					counter = 0;
+					receiving_packet->payloadSize = bl;
+                    // We've received 1 byte
+					counter = 1;
 				}
-                // The type was garbage, reset the module
+                
+                // The length doesn't make sense, so reset
                 else {
 					PORTC &= ~(1 << 4);
 					counter = 0;
 					MRF_reset();
 					return;
 				}
+                
 				break;
 
 			case MRF_TRANSMIT_PACKET:
@@ -116,14 +120,16 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 				// (including preamble, sync, length, and dummy byte)
 				RegisterSet(MRF_TXBREG | transmit_buffer[counter++]);
 				
-				// Derivation of the +6:
+				// Derivation of the +4:
 				// Preamble:      1 + (before packet)
 				// Sync word:     2 + (before packet)
-				// Length byte:   1 + (Packet byte 1, not included in length)
-				// Dummy byte:    1 + (Not actually transmitted)
-				// Pre-increment: 1 =
-				// Total:         6
-				if (counter >= (transmit_buffer[3] + 6)) {
+				// Dummy byte:    1 = (Not actually transmitted)
+				// Total:         4
+
+				// Test for packet finish
+                if (counter > (transmit_buffer[3] + 4 +
+                               MRF_PACKET_OVERHEAD)) {
+
 					// Disable transmitter, enable receiver
 					RegisterSet(MRF_PMCREG | MRF_RXCEN);
 					RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
@@ -138,10 +144,15 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 				break;
 								
 			case MRF_RECEIVE_PACKET:	// We've received at least the size
-				receiving_packet->payload[counter++] = MRF_fifo_read();
-				
+                bl = MRF_fifo_read();
+
+                // Convert the packet to a linear string of bytes
+                char *packet_bytes = (char *)receiving_packet;
+                
+                packet_bytes[counter++] = bl;
+                
 				// End of packet?
-				if (counter >= receiving_packet->payloadSize + 36) {
+				if (counter > receiving_packet->payloadSize + MRF_PACKET_OVERHEAD) {
 
 					// Reset the FIFO
 					RegisterSet(MRF_FIFOSTREG_SET);
@@ -373,18 +384,18 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 	transmit_buffer[1] = 0x2D;
 	transmit_buffer[2] = 0xD4;
 
-    // Copy the packet parts before the payload to the tx buffer
-    transmit_buffer[3] = packet->type;
+    // Copy packet fields
+    transmit_buffer[3] = packet->payloadSize;
+    transmit_buffer[4] = packet->type;
 
+    // Copy the FEC data
     for (i = 0; i < 32; i++) {
         transmit_buffer[5+i] = packet->FEC[i];
     }
-    
-    transmit_buffer[37] = packet->payloadSize;
-    
+        
 	// Copy the packet contents into the buffer
 	for (i = 0; i < packet->payloadSize; i++) {
-		transmit_buffer[38 + i] = packet->payload[i];
+		transmit_buffer[MRF_PACKET_OVERHEAD + i] = packet->payload[i];
 	}
 
 	RegisterSet(MRF_PMCREG);					// Turn everything off

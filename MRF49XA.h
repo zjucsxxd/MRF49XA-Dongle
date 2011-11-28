@@ -40,7 +40,7 @@ uint16_t MRF_statusRead(void);
 // 34 bytes + the payload size.
 
 // These defined may be used to access the maximum payload length in the app.
-#define MRF_PAYLOAD_LEN     223
+#define MRF_PAYLOAD_LEN     128
 #define MRF_FEC_LEN         32
 
 typedef struct {
@@ -55,6 +55,8 @@ typedef struct {
 #define MRF_PACKET_LEN      sizeof(MRF_packet_t)
 // Space for preamble, sync, and dummy
 #define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
+// Packet overhead (length, type, and FEC)
+#define MRF_PACKET_OVERHEAD 34
 
 // Packet based functions
 void MRF_transmit_packet(MRF_packet_t *packet);
