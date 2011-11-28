@@ -47,11 +47,22 @@
 #define MRF_FSEL_DDRx	DDRB
 #define MRF_FSEL_BIT	5
 
+#ifdef BOARD_USBKEY
 #define MRF_IRO_PINx	PINE
 #define MRF_IRO_PORTx	PORTE
 #define MRF_IRO_DDRx	DDRE
 #define MRF_IRO_BIT		4
+
+#else
+#define MRF_IRO_PINx	PINC
+#define MRF_IRO_PORTx	PORTC
+#define MRF_IRO_DDRx	DDRC
+#define MRF_IRO_BIT		7
+#endif
+
 #define MRF_IRO_VECTOR	INT4_vect
+
+
 
 // These are macros for setting up the interrupts for the MRF
 #define MRF_INT_SETUP()	EICRB |= (1 << ISC41)
