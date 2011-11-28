@@ -7,12 +7,18 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		3CACE0831478A2E900CF261D /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		3C2663E7147A27D100E5F63E /* rs8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rs8.c; sourceTree = "<group>"; };
+		3C2663E8147A27D100E5F63E /* rs8.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rs8.h; sourceTree = "<group>"; };
+		3C6E7986147DE962006A7D8C /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		3C6E7987147DFCF5006A7D8C /* hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hardware.h; sourceTree = "<group>"; };
+		3C6E7988147DFCF5006A7D8C /* MRF49XA_definitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRF49XA_definitions.h; sourceTree = "<group>"; };
+		3C6E7989147DFCF5006A7D8C /* MRF49XA.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MRF49XA.c; sourceTree = "<group>"; };
+		3C6E798A147DFCF5006A7D8C /* MRF49XA.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRF49XA.h; sourceTree = "<group>"; };
+		3C6E798B147DFCF5006A7D8C /* spi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = spi.c; sourceTree = "<group>"; };
+		3C6E798C147DFCF5006A7D8C /* spi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spi.h; sourceTree = "<group>"; };
+		3C6E798D147F6AD7006A7D8C /* Descriptors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Descriptors.c; sourceTree = "<group>"; };
+		3C6E798E147F6AD7006A7D8C /* Descriptors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Descriptors.h; sourceTree = "<group>"; };
 		3CACE0841478A47700CF261D /* license.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = license.txt; sourceTree = "<group>"; };
-		3CACE0851478A90A00CF261D /* Descriptors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Descriptors.c; sourceTree = "<group>"; };
-		3CACE0861478A90A00CF261D /* Descriptors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Descriptors.h; sourceTree = "<group>"; };
-		3CACE0871478A98A00CF261D /* VirtualSerial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = VirtualSerial.c; sourceTree = "<group>"; };
-		3CACE0881478A98A00CF261D /* VirtualSerial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VirtualSerial.h; sourceTree = "<group>"; };
 		3CACE1941478B0B800CF261D /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -20,13 +26,19 @@
 		3CACE0761478A10200CF261D = {
 			isa = PBXGroup;
 			children = (
-				3CACE0831478A2E900CF261D /* main.c */,
+				3C6E798D147F6AD7006A7D8C /* Descriptors.c */,
+				3C6E798E147F6AD7006A7D8C /* Descriptors.h */,
+				3C6E7986147DE962006A7D8C /* main.c */,
 				3CACE0841478A47700CF261D /* license.txt */,
-				3CACE0851478A90A00CF261D /* Descriptors.c */,
-				3CACE0861478A90A00CF261D /* Descriptors.h */,
-				3CACE0871478A98A00CF261D /* VirtualSerial.c */,
-				3CACE0881478A98A00CF261D /* VirtualSerial.h */,
 				3CACE1941478B0B800CF261D /* makefile */,
+				3C2663E7147A27D100E5F63E /* rs8.c */,
+				3C2663E8147A27D100E5F63E /* rs8.h */,
+				3C6E7987147DFCF5006A7D8C /* hardware.h */,
+				3C6E7988147DFCF5006A7D8C /* MRF49XA_definitions.h */,
+				3C6E7989147DFCF5006A7D8C /* MRF49XA.c */,
+				3C6E798A147DFCF5006A7D8C /* MRF49XA.h */,
+				3C6E798B147DFCF5006A7D8C /* spi.c */,
+				3C6E798C147DFCF5006A7D8C /* spi.h */,
 			);
 			sourceTree = "<group>";
 		};
@@ -157,6 +169,7 @@
 				3CACE0821478A10300CF261D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
