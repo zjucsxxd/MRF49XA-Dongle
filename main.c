@@ -130,12 +130,18 @@ bool byteFromUSB(char byte) {
     if (inputCounter == MRF_PAYLOAD_LEN) {
 
         // Encode the data using the RS 8 encoder
+        // Use the difference between the rs8 data length and the actual
+        // payload length as the padding field.
         encode_rs_8(packet.payload,
-                    packet.FEC, 0);
+                    packet.FEC,
+                    RS8_DATA_LENGTH - inputCounter);
         PORTD = PORTD & ~LED1_RED;
 
         // Set the payload size field
         packet.payloadSize = inputCounter;
+
+        // Set the type field
+        packet.type = 0xBD;
         
         // Send the packet to the RF stack
         MRF_transmit_packet(&packet);
@@ -160,7 +166,7 @@ init(void) {
 	wdt_disable();
     
 	// Disable prescaler (the CLKDIV8 fuse is set at the factory)
-	clock_prescale_set(clock_div_1);
+    clock_prescale_set(clock_div_1);
 
     // Initialize the SPI bus
     spi_init();
@@ -181,11 +187,22 @@ init(void) {
 int
 main(void) {
     char byte;
-    char count;
+    char count = 0;
     
     init();
     
     // Main loop
+
+    // Packet tests (transmit one full packet every second
+    while (true) {
+        if (byteFromUSB(count)) {
+            _delay_ms(1000);
+        }
+        count++;
+    }
+    
+    // Spectrum tests
+    /*
     while (true) {
         count = CDC_Device_BytesReceived(&CDC_interface);
         
@@ -221,4 +238,5 @@ main(void) {
         CDC_Device_USBTask(&CDC_interface);
         USB_USBTask();
     }
+     */
 }
