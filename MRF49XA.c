@@ -122,8 +122,7 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 				
 				// Derivation of the +4:
 				// Preamble:      1 + (before packet)
-				// Sync word:     2 + (before packet)
-				// Dummy byte:    1 = (Not actually transmitted)
+				// Sync word:     2 = (before packet)
 				// Total:         4
 
 				// Test for packet finish
@@ -395,7 +394,7 @@ void MRF_transmit_packet(MRF_packet_t *packet)
         
 	// Copy the packet contents into the buffer
 	for (i = 0; i < packet->payloadSize; i++) {
-		transmit_buffer[MRF_PACKET_OVERHEAD + i] = packet->payload[i];
+		transmit_buffer[5 + 32 + i] = packet->payload[i];
 	}
 
 	RegisterSet(MRF_PMCREG);					// Turn everything off
