@@ -5,10 +5,11 @@
  * This version tweaked by Philip Heron <phil@sanslogic.co.uk>
 */
 
+#include <avr/pgmspace.h>
 #include <string.h>
 #include "rs8.h"
 
-static const uint8_t ALPHA_TO[] = {
+uint8_t ALPHA_TO[] PROGMEM = {
 0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x87,0x89,0x95,0xAD,0xDD,0x3D,0x7A,0xF4,
 0x6F,0xDE,0x3B,0x76,0xEC,0x5F,0xBE,0xFB,0x71,0xE2,0x43,0x86,0x8B,0x91,0xA5,0xCD,
 0x1D,0x3A,0x74,0xE8,0x57,0xAE,0xDB,0x31,0x62,0xC4,0x0F,0x1E,0x3C,0x78,0xF0,0x67,
@@ -27,7 +28,7 @@ static const uint8_t ALPHA_TO[] = {
 0x33,0x66,0xCC,0x1F,0x3E,0x7C,0xF8,0x77,0xEE,0x5B,0xB6,0xEB,0x51,0xA2,0xC3,0x00,
 };
 
-static const uint8_t INDEX_OF[] = {
+uint8_t INDEX_OF[] PROGMEM = {
 0xFF,0x00,0x01,0x63,0x02,0xC6,0x64,0x6A,0x03,0xCD,0xC7,0xBC,0x65,0x7E,0x6B,0x2A,
 0x04,0x8D,0xCE,0x4E,0xC8,0xD4,0xBD,0xE1,0x66,0xDD,0x7F,0x31,0x6C,0x20,0x2B,0xF3,
 0x05,0x57,0x8E,0xE8,0xCF,0xAC,0x4F,0x83,0xC9,0xD9,0xD5,0x41,0xBE,0x94,0xE2,0xB4,
@@ -46,7 +47,7 @@ static const uint8_t INDEX_OF[] = {
 0x2E,0x4B,0xB9,0x60,0x0F,0xED,0x3E,0xE5,0xF6,0x87,0xA5,0x17,0x3A,0xA3,0x3C,0xB7,
 };
 
-static const uint8_t GENPOLY[] = {
+uint8_t GENPOLY[] PROGMEM = {
 0x00,0xF9,0x3B,0x42,0x04,0x2B,0x7E,0xFB,0x61,0x1E,0x03,0xD5,0x32,0x42,0xAA,0x05,
 0x18,0x05,0xAA,0x42,0x32,0xD5,0x03,0x1E,0x61,0xFB,0x7E,0x2B,0x04,0x42,0x3B,0xF9,
 0x00,
@@ -83,19 +84,25 @@ void encode_rs_8(uint8_t *data, uint8_t *parity, int pad)
 	
 	for(i = 0; i < NN - NROOTS - pad; i++)
 	{
-		feedback = INDEX_OF[data[i] ^ parity[0]];
+		feedback = pgm_read_byte(&INDEX_OF[data[i] ^ parity[0]]);
 		if(feedback != A0) /* feedback term is non-zero */
 		{
-			for(j = 1; j < NROOTS; j++)
-				parity[j] ^= ALPHA_TO[mod255(feedback + GENPOLY[NROOTS - j])];
+			for(j = 1; j < NROOTS; j++) {
+                char index = pgm_read_byte(&GENPOLY[NROOTS - j]);
+                index = mod255(feedback + index);
+				parity[j] ^= pgm_read_byte(&ALPHA_TO[index]);                
+            }
 		}
 		
 		/* Shift */
 		memmove(&parity[0], &parity[1], sizeof(uint8_t) * (NROOTS - 1));
-		if(feedback != A0)
-			parity[NROOTS - 1] = ALPHA_TO[mod255(feedback + GENPOLY[0])];
-		else
+		if(feedback != A0) {
+            char index = pgm_read_byte(&GENPOLY[0]);
+            index = mod255(feedback + index);
+			parity[NROOTS - 1] = pgm_read_byte(&ALPHA_TO[index]);
+        } else {
 			parity[NROOTS - 1] = 0;
+        }
 	}
 }
 
@@ -120,7 +127,11 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		for(i = 0; i < NROOTS; i++)
 		{
 			if(s[i] == 0) s[i] = data[j];
-			else s[i] = data[j] ^ ALPHA_TO[MODNN(INDEX_OF[s[i]] + (FCR + i) * PRIM)];
+			else {
+                char index = pgm_read_byte(&INDEX_OF[s[i]]);
+                index = MODNN(index + (FCR + i) * PRIM);
+                s[i] = data[j] ^ pgm_read_byte(&ALPHA_TO[index]);
+            }
 		}
 	}
 	
@@ -129,7 +140,7 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 	for(i = 0; i < NROOTS; i++)
 	{
 		syn_error |= s[i];
-		s[i] = INDEX_OF[s[i]];
+		s[i] = pgm_read_byte(&INDEX_OF[s[i]]);
 	}
 	
 	if(!syn_error)
@@ -147,21 +158,24 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 	if(no_eras > 0)
 	{
 		/* Init lambda to be the erasure locator polynomial */
-		lambda[1] = ALPHA_TO[MODNN(PRIM * (NN - 1 - eras_pos[0]))];
+        char index = MODNN(PRIM * (NN - 1 - eras_pos[0]));
+		lambda[1] = pgm_read_byte(&ALPHA_TO[index]);
 		for(i = 1; i < no_eras; i++)
 		{
 			u = MODNN(PRIM * (NN - 1 - eras_pos[i]));
 			for(j = i + 1; j > 0; j--)
 			{
-				tmp = INDEX_OF[lambda[j - 1]];
-				if(tmp != A0) lambda[j] ^= ALPHA_TO[MODNN(u + tmp)];
+				tmp = pgm_read_byte(&INDEX_OF[lambda[j - 1]]);
+				if(tmp != A0) {
+                    lambda[j] ^= pgm_read_byte(&ALPHA_TO[MODNN(u + tmp)]);
+                }
 			}
 		}
 		
 	}
 	
 	for(i = 0; i < NROOTS + 1; i++)
-		b[i] = INDEX_OF[lambda[i]];
+		b[i] = pgm_read_byte(&INDEX_OF[lambda[i]]);
 	
 	/*
 	 * Begin Berlekamp-Massey algorithm to determine error+erasure
@@ -177,10 +191,12 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		{
 			if((lambda[i] != 0) && (s[r - i - 1] != A0))
 			{
-				discr_r ^= ALPHA_TO[MODNN(INDEX_OF[lambda[i]] + s[r - i - 1])];
+                char index = pgm_read_byte(&INDEX_OF[lambda[i]]);
+                index = MODNN(index + s[r - i - 1]);
+				discr_r ^= pgm_read_byte(&ALPHA_TO[index]);
 			}
 		}
-		discr_r = INDEX_OF[discr_r]; /* Index form */
+		discr_r = pgm_read_byte(&INDEX_OF[discr_r]); /* Index form */
 		if(discr_r == A0)
 		{
 			/* 2 lines below: B(x) <-- x*B(x) */
@@ -193,8 +209,8 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 			t[0] = lambda[0];
 			for(i = 0; i < NROOTS; i++)
 			{
-				if(b[i] != A0)
-					t[i + 1] = lambda[i + 1] ^ ALPHA_TO[MODNN(discr_r + b[i])];
+				if(b[i] != A0) 
+					t[i + 1] = lambda[i + 1] ^ pgm_read_byte(&ALPHA_TO[MODNN(discr_r + b[i])]);
 				else
 					t[i + 1] = lambda[i + 1];
 			}
@@ -206,8 +222,10 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 				 * 2 lines below: B(x) <-- inv(discr_r) *
 				 * lambda(x)
 				 */
-				for(i = 0; i <= NROOTS; i++)
-					b[i] = (lambda[i] == 0) ? A0 : MODNN(INDEX_OF[lambda[i]] - discr_r + NN);
+				for(i = 0; i <= NROOTS; i++) {
+                    char index = pgm_read_byte(&INDEX_OF[lambda[i]]);
+					b[i] = (lambda[i] == 0) ? A0 : MODNN(index - discr_r + NN);
+                }
 			}
 			else
 			{
@@ -224,7 +242,7 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 	deg_lambda = 0;
 	for(i = 0; i < NROOTS + 1; i++)
 	{
-		lambda[i] = INDEX_OF[lambda[i]];
+		lambda[i] = pgm_read_byte(&INDEX_OF[lambda[i]]);
 		if(lambda[i] != A0) deg_lambda = i;
 	}
 	
@@ -239,7 +257,7 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 			if(reg[j] != A0)
 			{
 				reg[j] = MODNN(reg[j] + j);
-				q ^= ALPHA_TO[reg[j]];
+				q ^= pgm_read_byte(&ALPHA_TO[reg[j]]);
 			}
 		}
 		
@@ -275,9 +293,9 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		for(j = i; j >= 0; j--)
 		{
 			if((s[i - j] != A0) && (lambda[j] != A0))
-				tmp ^= ALPHA_TO[MODNN(s[i - j] + lambda[j])];
+				tmp ^= pgm_read_byte(&ALPHA_TO[MODNN(s[i - j] + lambda[j])]);
 		}
-		omega[i] = INDEX_OF[tmp];
+		omega[i] = pgm_read_byte(&INDEX_OF[tmp]);
 	}
 	
 	/*
@@ -289,21 +307,25 @@ int decode_rs_8(uint8_t *data, int *eras_pos, int no_eras, int pad)
 		num1 = 0;
 		for(i = deg_omega; i >= 0; i--)
 		{
-			if(omega[i] != A0) num1 ^= ALPHA_TO[MODNN(omega[i] + i * root[j])];
+			if(omega[i] != A0) num1 ^= pgm_read_byte(&ALPHA_TO[MODNN(omega[i] + i * root[j])]);
 		}
-		num2 = ALPHA_TO[MODNN(root[j] * (FCR - 1) + NN)];
+		num2 = pgm_read_byte(&ALPHA_TO[MODNN(root[j] * (FCR - 1) + NN)]);
 		den = 0;
 		
 		/* lambda[i+1] for i even is the formal derivative lambda_pr of lambda[i] */
 		for(i = MIN(deg_lambda, NROOTS - 1) & ~1; i >= 0; i -= 2)
 		{
-			if(lambda[i + 1] != A0) den ^= ALPHA_TO[MODNN(lambda[i + 1] + i * root[j])];
+			if(lambda[i + 1] != A0) den ^= pgm_read_byte(&ALPHA_TO[MODNN(lambda[i + 1] + i * root[j])]);
 		}
 		
 		/* Apply error to data */
 		if(num1 != 0 && loc[j] >= pad)
 		{
-			data[loc[j] - pad] ^= ALPHA_TO[MODNN(INDEX_OF[num1] + INDEX_OF[num2] + NN - INDEX_OF[den])];
+            char index1 = pgm_read_byte(&INDEX_OF[num1]);
+            char index2 = pgm_read_byte(&INDEX_OF[num2]);
+            char index3 = pgm_read_byte(&INDEX_OF[den]);
+            char index  = MODNN(index1 + index2 + NN - index3);
+			data[loc[j] - pad] ^= pgm_read_byte(&ALPHA_TO[index]);
 		}
 	}
 	
