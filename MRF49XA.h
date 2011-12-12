@@ -40,7 +40,7 @@ uint16_t MRF_statusRead(void);
 // 34 bytes + the payload size.
 
 // These defined may be used to access the maximum payload length in the app.
-#define MRF_PAYLOAD_LEN     128
+#define MRF_PAYLOAD_LEN     64
 #define MRF_FEC_LEN         32
 
 typedef struct {
