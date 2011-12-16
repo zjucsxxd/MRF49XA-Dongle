@@ -35,9 +35,10 @@ void spi_init(void)
 // In HW SPI mode, we still write to spi_read_buffer to enable 16 bit reads
 uint8_t spi_read8()
 {
-	uint8_t	temp = spi_read_buffer;
+    // Get the value and mask out the upper bits
+	uint8_t	temp = spi_read_buffer & 0x00FF;
 	spi_read_buffer = 0x0000;
-	return temp;
+	return temp & 0x00FF;
 }
 
 uint16_t spi_read16()
