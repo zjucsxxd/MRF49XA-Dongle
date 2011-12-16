@@ -26,28 +26,21 @@ uint8_t MRF_is_idle(void);
 uint8_t MRF_is_alive(void);
 uint16_t MRF_statusRead(void);
 
-// There is a technical reason for the size and makup of the packet
-// The Reed-solomon code we're using is a fixed (255,223) Reed Solomon code
-// with up to 8-bit codes.  The (255,223) means that the total size of the
-// code word is 255 bytes and there are 223 bytes of useful data,
-// which comes out to 32 bytes of parity.
-// 
-// There isn't much use to calculating the parity of the type and size of the
-// packet, as they need to be available before the parity is collected.
+// The packet structure is now a mostly blank slate.  The size feild is
+// only includes the payload, not the size and type.  The type feild
+// contains a hint for the internal structure of the packet.
 //
-// The payload section may be smaller than the defined size.  It is possible
-// to make a custom struct that is smaller, or you may malloc an array that is
-// 34 bytes + the payload size.
-
+// If the packet structure is changed, the payload size field must be first
+// and must not be renamed.  Mark the constant number of bytes that aren't
+// included in the payloadSize field in the MRF_PACKET_OVERHEAD define.
+//
 // These defined may be used to access the maximum payload length in the app.
-#define MRF_PAYLOAD_LEN     64
-#define MRF_FEC_LEN         32
+#define MRF_PAYLOAD_LEN     96
 
 typedef struct {
-    char  payloadSize;              // size of the payload field
-    char  type;                     // for now, set to 0xBD
-    char  FEC[MRF_FEC_LEN];         // Reed Solomon FEC for the packet
-    char  payload[MRF_PAYLOAD_LEN]; // actual payload
+    char  payloadSize;   // Total size of the payload
+    char  type;         // for now, set to 0xBD
+    char  payload[MRF_PAYLOAD_LEN];
 } MRF_packet_t;
 
 // These defines are used internally to the library, they include 
@@ -55,8 +48,8 @@ typedef struct {
 #define MRF_PACKET_LEN      sizeof(MRF_packet_t)
 // Space for preamble, sync, and dummy
 #define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
-// Packet overhead (length, type, and FEC)
-#define MRF_PACKET_OVERHEAD 34
+// Packet overhead (length)
+#define MRF_PACKET_OVERHEAD 2
 
 // Packet based functions
 void MRF_transmit_packet(MRF_packet_t *packet);
