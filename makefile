@@ -60,8 +60,8 @@
 
 
 # MCU name
-MCU = at90usb1287
-#MCU = atmega32u2
+#MCU = at90usb1287
+MCU = at90usb162
 
 # Target architecture (see library "Board Types" documentation).
 ARCH = AVR8
@@ -70,8 +70,8 @@ ARCH = AVR8
 # Target board (see library "Board Types" documentation, NONE for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called
 # "Board" inside the application directory.
-BOARD = USBKEY
-#BOARD = USER
+#BOARD = USBKEY
+BOARD = USER
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the
@@ -345,10 +345,10 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 # Type: avrdude -c ?
 # to get a full listing.
 #
-AVRDUDE_PROGRAMMER = jtagmkII
+AVRDUDE_PROGRAMMER = AVR109
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
-AVRDUDE_PORT = usb
+AVRDUDE_PORT = /dev/tty.usbmodem40131
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
