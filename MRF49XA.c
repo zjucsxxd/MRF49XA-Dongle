@@ -41,7 +41,7 @@ MRF_packet_t Rx_Packet_b;
 // The hasPacket flag means that the finished_packet variable contains
 // a fresh data packet.  The receiving_packet always contains space for
 // received data.  If finished_packet isn't read before the a second packet
-// comes
+// comes the contents are lost
 volatile uint8_t	hasPacket;		// Initialized to 0 by default
 volatile MRF_packet_t *finished_packet;
 volatile MRF_packet_t *receiving_packet;
@@ -74,6 +74,7 @@ void MRF_reset(void)
 	RegisterSet(MRF_PMCREG | MRF_RXCEN);	
 
     mrf_status = MRF_IDLE;
+    LED_PORTx &= ~(1 << LED_RX) & ~(1 << LED_TX);
 }
 
 volatile uint8_t counter;
@@ -89,17 +90,17 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 	// Wait for the synchronizer
 	_delay_us(1);
 	
-	// Perform operations
+	// the MISO pin marks whether the FIFO needs attention
 	if (bit_is_set(SPI_MISO_PINx, SPI_MISO_BIT)) {
 		
 		switch (mrf_state) {
 			case MRF_IDLE:
 				bl = MRF_fifo_read();
 				
-                // The first byte is the packet length
-                // the maximum length is 128
-				if (bl > 128) {
+                // The first byte is the packet payload length
+				if (bl <= MRF_PAYLOAD_LEN) {
 					mrf_state = MRF_RECEIVE_PACKET;
+                    LED_PORTx |= (1 << LED_TX);
 					receiving_packet->payloadSize = bl;
                     // We've received 1 byte
 					counter = 1;
@@ -107,7 +108,6 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
                 
                 // The length doesn't make sense, so reset
                 else {
-					PORTC &= ~(1 << 4);
 					counter = 0;
 					MRF_reset();
 					return;
@@ -137,6 +137,7 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 					
 					// Return the state
 					mrf_state = MRF_IDLE;
+                    LED_PORTx &= ~(1 << LED_TX);
 					counter = 0;
 				}
 				
@@ -151,12 +152,12 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
                 packet_bytes[counter++] = bl;
                 
 				// End of packet?
-				if (counter > receiving_packet->payloadSize + MRF_PACKET_OVERHEAD) {
+				if (counter >= receiving_packet->payloadSize + MRF_PACKET_OVERHEAD) {
 
 					// Reset the FIFO
 					RegisterSet(MRF_FIFOSTREG_SET);
 					RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
-					
+
 					// Swap packet structures
 					finished_packet = receiving_packet;
 					hasPacket = 1;
@@ -168,6 +169,7 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 					
 					// Restore state
 					mrf_state = MRF_IDLE;
+                    LED_PORTx |= (1 << LED_TX);
 					counter = 0;
 					receiving_packet->payloadSize = 0;
 				}			
@@ -215,6 +217,10 @@ void MRF_init(void)
 	// Enable the External interrupt for the IRO pin (falling edge)
     MRF_INT_SETUP();
 	
+    // Enable outputs for the LEDs (both high during init)
+    LED_PORTx     |=  (1 << LED_TX) | (1 << LED_RX);
+    LED_DDRx      |=  (1 << LED_TX) | (1 << LED_RX);
+    
 	// configuring the MRF49XA radio
 	RegisterSet(MRF_FIFOSTREG_SET);	// Set 8 bit FIFO interrupt count
 	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);	// Enable sync. latch
@@ -244,6 +250,11 @@ void MRF_init(void)
 	// Dummy read of status registers to clear Power on reset flag
 	mrf_status = MRF_statusRead();
 	
+    mrf_state = MRF_IDLE;
+    
+    // Turn off the LEDs
+    LED_PORTx &= ~(1 << LED_RX) & ~(1 << LED_TX);
+    
 	// Enable interrupt last, just in case they're already globally enabled
 	MRF_INT_MASK();
 }
@@ -251,14 +262,15 @@ void MRF_init(void)
 // Testing functions
 void MRF_transmit_zero()
 {
-	// If we're already in a "dumb transmit" state, just change the value
+    // If we're already doing a spectrum test, just mark the new pattern
 	if (mrf_state & MRF_TX_TEST_MASK) {
 		mrf_state = MRF_TRANSMIT_ZERO;
 		return;
 	}
 	
 	mrf_state = MRF_TRANSMIT_ZERO;
-
+    LED_PORTx |= (1 << LED_TX);
+    
 	// Enable the TX Register
 	RegisterSet(MRF_GENCREG_SET | MRF_TXDEN);
 	
@@ -274,12 +286,14 @@ void MRF_transmit_zero()
 
 void MRF_transmit_one()
 {
+    // If we're already doing a spectrum test, just mark the new pattern
 	if (mrf_state & MRF_TX_TEST_MASK) {
 		mrf_state = MRF_TRANSMIT_ONE;
 		return;
 	}
 	
 	mrf_state = MRF_TRANSMIT_ONE;
+    LED_PORTx |= (1 << LED_TX);
 	
 	// Enable the TX Register
 	RegisterSet(MRF_GENCREG_SET | MRF_TXDEN);
@@ -296,12 +310,14 @@ void MRF_transmit_one()
 
 void MRF_transmit_alternating()
 {
+    // If we're already doing a spectrum test, just mark the new pattern
 	if (mrf_state & MRF_TX_TEST_MASK) {
 		mrf_state = MRF_TRANSMIT_ALT;
 		return;
 	}
 	
 	mrf_state = MRF_TRANSMIT_ALT;
+    LED_PORTx |= (1 << LED_TX);
 	
 	// Enable the TX Register
 	RegisterSet(MRF_GENCREG_SET | MRF_TXDEN);
@@ -358,10 +374,10 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 
 	// We can check, without synchronization
 	// (because it doesn't change in the ISR)
-	// Whether we're in a testing mode.  If so, simply return.
-	// This is important, so we don't hard lock.
+	// Whether we're in a testing mode.
+    // If we are, reset the device and proceed
 	if (mrf_state & MRF_TX_TEST_MASK) {
-		return;
+        MRF_reset();
 	}
 	
 	// Wait for the module to be idle (this is cheezy synchronization)
@@ -377,25 +393,19 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 		}
 	} while (wait);
 
+    LED_PORTx |= (1 << LED_TX);
+
 	// Initialize the constant parts of the transmit buffer
 	counter = 0;
 	transmit_buffer[0] = 0xAA;
 	transmit_buffer[1] = 0x2D;
 	transmit_buffer[2] = 0xD4;
 
-    // Copy packet fields
-    transmit_buffer[3] = packet->payloadSize;
-    transmit_buffer[4] = packet->type;
-
-    // Copy the FEC data
-    for (i = 0; i < 32; i++) {
-        transmit_buffer[5+i] = packet->FEC[i];
+    // Copy the packet
+    char *packet_bytes = (char *)packet;
+    for (i = 0; i < packet->payloadSize + MRF_PACKET_OVERHEAD; i++) {
+        transmit_buffer[3 + i] = packet_bytes[i];
     }
-        
-	// Copy the packet contents into the buffer
-	for (i = 0; i < packet->payloadSize; i++) {
-		transmit_buffer[5 + 32 + i] = packet->payload[i];
-	}
 
 	RegisterSet(MRF_PMCREG);					// Turn everything off
 	RegisterSet(MRF_GENCREG_SET | MRF_TXDEN);	// Enable TX FIFO
