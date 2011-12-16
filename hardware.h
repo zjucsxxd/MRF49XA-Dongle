@@ -55,17 +55,14 @@
 
 #define LED_PORTx       PORTD
 #define LED_DDRx        DDRD
-
-#define LED_PWR         (1 << 4)
-#define LED_TX          (1 << 5)
-#define LED_RX          (1 << 6)
+#define LED_TX          5
+#define LED_RX          6
 
 #else
 #define LED_PORTx       PORTC
 #define LED_DDRx        DDRC
-#define LED_PWR         (1 << 4)
-#define LED_TX          (1 << 5)
-#define LED_RX          (1 << 6)
+#define LED_TX          5
+#define LED_RX          6
 
 #define MRF_IRO_PINx	PINC
 #define MRF_IRO_PORTx	PORTC
