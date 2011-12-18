@@ -47,6 +47,7 @@
 #define MRF_FSEL_DDRx	DDRB
 #define MRF_FSEL_BIT	5
 
+
 #ifdef BOARD_USBKEY
 #define MRF_IRO_PINx	PINE
 #define MRF_IRO_PORTx	PORTE
@@ -55,12 +56,14 @@
 
 #define LED_PORTx       PORTD
 #define LED_DDRx        DDRD
+#define LED_POWER       4
 #define LED_TX          5
 #define LED_RX          6
 
 #else
 #define LED_PORTx       PORTC
 #define LED_DDRx        DDRC
+#define LED_POWER       4
 #define LED_TX          5
 #define LED_RX          6
 
@@ -69,6 +72,7 @@
 #define MRF_IRO_DDRx	DDRC
 #define MRF_IRO_BIT		7
 #endif
+
 
 #define MRF_IRO_VECTOR	INT4_vect
 
