@@ -99,7 +99,7 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 				
                 // The first byte is the packet payload length
 				if (bl <= MRF_PAYLOAD_LEN) {
-					mrf_state = MRF_RECEIVE_PACKET;
+					mrf_state  = MRF_RECEIVE_PACKET;
                     LED_PORTx |= (1 << LED_TX);
 					receiving_packet->payloadSize = bl;
                     // We've received 1 byte
@@ -122,12 +122,13 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 				
 				// Derivation of the +4:
 				// Preamble:      1 + (before packet)
-				// Sync word:     2 = (before packet)
+				// Sync word:     2 + (before packet)
+                // Pre-increment  1 =
 				// Total:         4
 
 				// Test for packet finish
-                if (counter > (transmit_buffer[3] + 4 +
-                               MRF_PACKET_OVERHEAD)) {
+                if (counter >  (transmit_buffer[3] + 4 +
+                                MRF_PACKET_OVERHEAD)) {
 
 					// Disable transmitter, enable receiver
 					RegisterSet(MRF_PMCREG | MRF_RXCEN);
@@ -152,7 +153,8 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
                 packet_bytes[counter++] = bl;
                 
 				// End of packet?
-				if (counter >= receiving_packet->payloadSize + MRF_PACKET_OVERHEAD) {
+				if (counter >= receiving_packet->payloadSize +
+                               MRF_PACKET_OVERHEAD) {
 
 					// Reset the FIFO
 					RegisterSet(MRF_FIFOSTREG_SET);
@@ -212,7 +214,7 @@ void MRF_init(void)
 	
 	// Enable the FSEL as output with high value (default, low for receive)
 	MRF_FSEL_PORTx |= (1 << MRF_FSEL_BIT);
-	MRF_FSEL_DDRx |=  (1 << MRF_FSEL_BIT);
+	MRF_FSEL_DDRx  |= (1 << MRF_FSEL_BIT);
 	
 	// Enable the External interrupt for the IRO pin (falling edge)
     MRF_INT_SETUP();
@@ -401,7 +403,7 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 	transmit_buffer[1] = 0x2D;
 	transmit_buffer[2] = 0xD4;
 
-    // Copy the packet
+    // Copy the packet (including the fields before the payload)
     char *packet_bytes = (char *)packet;
     for (i = 0; i < packet->payloadSize + MRF_PACKET_OVERHEAD; i++) {
         transmit_buffer[3 + i] = packet_bytes[i];
