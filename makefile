@@ -63,15 +63,14 @@
 #MCU = at90usb1287
 MCU = at90usb162
 
-# Target architecture (see library "Board Types" documentation).
-ARCH = AVR8
-
-
 # Target board (see library "Board Types" documentation, NONE for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called
 # "Board" inside the application directory.
 #BOARD = USBKEY
-BOARD = USER
+BOARD = NONE
+
+# Target architecture (see library "Board Types" documentation).
+ARCH = AVR8
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the
@@ -160,7 +159,7 @@ ASRC =
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
-OPT = s
+OPT = 1
 
 
 # Debugging format.
@@ -348,7 +347,7 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 AVRDUDE_PROGRAMMER = AVR109
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
-AVRDUDE_PORT = /dev/tty.usbmodem40131
+AVRDUDE_PORT = /dev/tty.usbmodemfd121
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
