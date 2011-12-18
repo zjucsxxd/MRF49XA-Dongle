@@ -40,24 +40,14 @@
 #include <LUFA/Drivers/USB/USB.h>
 #include <LUFA/Drivers/USB/Class/Device/CDC.h>
 
-MRF_packet_t packet = {
-    96,
-    0xBD,
-    {0x4c, 0x9a, 0x72, 0x69, 0x9d, 0x92, 0x6f, 0xe8, 0x27, 0x0f,
-        0xc1, 0x38, 0xf9, 0x30, 0x73, 0xc2, 0x35, 0x58, 0x06, 0x15,
-        0xd8, 0x0c, 0xb9, 0x97, 0xe9, 0xcf, 0xee, 0xbe, 0xfc, 0x18,
-        0x7a, 0xb9, // FEC Data
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-        0x00, 0x01, 0x02, 0x03} // Payload data
-};
+#define LEDS_INIT   ((1 << LED_POWER) | (1 << LED_RX) | (1 << LED_TX))
+#define LEDS_ENUM   ((1 << LED_POWER) | (1 << LED_RX))
+#define LEDS_READY   (1 << LED_POWER)
+#define LEDS_ERROR  ((1 << LED_POWER) | (1 << LED_TX))
 
-//volatile MRF_packet_t packet;
-volatile char counter;
+static MRF_packet_t packet;
+// This should be volatile because it can be changed in the break event
+volatile static int counter = 0;
 
 /** LUFA CDC Class driver interface configuration and state information.
  *  This structure is passed to all CDC Class driver functions, so that
@@ -104,17 +94,15 @@ void setFlowControl_start(void) {
 }
 
 // Basic callbacks for USB events.
-// For now, we'll change the status of the USB Key LEDs
-// as a basic form of debugging.
 void EVENT_USB_Device_Connect(void)
 {
-    //    PORTD = LEDS_ENUM;
+    LED_PORTx = LEDS_ENUM;
 }
 
 void EVENT_USB_Device_Disconnect(void)
 {
     configured = 0;
-    //    PORTD = LEDS_ERROR;
+    LED_PORTx = LEDS_ERROR;
 }
 
 void EVENT_USB_Device_ConfigurationChanged(void)
@@ -123,8 +111,8 @@ void EVENT_USB_Device_ConfigurationChanged(void)
     
     if (success) {
         configured = 1;
-        PORTC |= (1 << 4);
-
+        LED_PORTx = LEDS_READY;
+        
         // Set HW flow control to allow communication
         setFlowControl_start();
     } else {
@@ -148,8 +136,8 @@ void EVENT_CDC_BreakSent(USB_ClassInfo_CDC_Device_t *const CDCInterfaceInfo,
     // The break event has the effect of transmitting the current buffer
     // regardless of the system state.  This can be used to force bad packets
     // or to reset the state machine
-    //    MRF_transmit_packet(&packet);
-    //    counter = 0;
+    MRF_transmit_packet(&packet);
+    counter = 0;
 }
 
 #pragma mark Application logic
@@ -158,12 +146,8 @@ init(void) {
     configured = 0;
 
     // Enable some LEDs, just to make sure it loads
-    // Other than the LEDs, port D is unused
-//    DDRD  = 0xFF;
-    
-    //    PORTD = LEDS_INIT;
-    DDRC  |= (1 << 4);
-    
+    LED_DDRx = (1 << LED_POWER) | (1 << LED_RX) | (1 << LED_TX);
+
     // Disable watchdog
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
@@ -187,46 +171,62 @@ init(void) {
     sei();    
 }
 
+void byteReceved(char byte)
+{
+    CDC_Device_SendByte(&CDC_interface, byte);
+    LED_PORTx ^= LED_POWER;
+    
+    // Fill out the packet contents
+    switch (counter) {
+        case 0:
+            // Sanity checking on the length byte
+            if (byte <= MRF_PAYLOAD_LEN) {
+                packet.payloadSize = byte;
+                counter++;
+            }
+            break;
+        case 1:
+            packet.type = byte;
+            counter++;
+            break;
+        default:
+            packet.payload[counter - 2] = byte;
+            counter++;
+            break;
+    }
+    
+    // If the counter equals the packet size, transmit
+    if (counter >= packet.payloadSize + MRF_PACKET_OVERHEAD) {
+        // Disable new serial data during this routine
+        setFlowControl_stop();
+        MRF_transmit_packet(&packet);
+        setFlowControl_start();
+        
+        counter = 0;
+    }
+
+}
+
 int
 main(void) {
-    // Get a monolithic representation of the packet
-    char *packet_bytes = (char *)&packet;
     
     init();
-        
+
     while (true) {
-        // Read available bytes into the packet structure
-        while (CDC_Device_BytesReceived(&CDC_interface) > 0) {
-            PORTC ^=  (1 << 4);
-
-            // continue doing this until the packet size and the count match
-            // or the maximum size has been met
-            int16_t br = CDC_Device_ReceiveByte(&CDC_interface);
-            
-            // Blindly place the new byte into the packet
-            packet_bytes[counter++] = (char)br;
-            
-            // If the counter equals the packet size, transmit
-            if (counter >= packet.payloadSize + MRF_PACKET_OVERHEAD) {
-
-                // Disable new serial data during this routine
-                setFlowControl_stop();
-                MRF_transmit_packet(&packet);
-                setFlowControl_start();
-
-                counter = 0;
-            }
+        if (CDC_Device_BytesReceived(&CDC_interface) > 0) {
+            byteReceved(CDC_Device_ReceiveByte(&CDC_interface));
         }
         
         // Test for a new packet.  If there is one, send it along over the USB
         // If the USB isn't configured, drop it on the floor
         MRF_packet_t *rx_packet = MRF_receive_packet();
-        if (rx_packet != NULL) {
-            if (configured) {
-                CDC_Device_SendData(&CDC_interface,
-                                    (void *)&packet,
-                                    packet.payloadSize + MRF_PACKET_OVERHEAD);
-            }
+        if (rx_packet  != NULL &&
+            configured == true) {
+            CDC_Device_SendByte(&CDC_interface, rx_packet->payloadSize);
+            CDC_Device_SendByte(&CDC_interface, rx_packet->type);
+            CDC_Device_SendData(&CDC_interface,
+                                rx_packet->payload,
+                                rx_packet->payloadSize);
         }
 
         // Both of these functions must be run at least once every 30mS
