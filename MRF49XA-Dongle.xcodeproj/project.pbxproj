@@ -9,6 +9,7 @@
 /* Begin PBXFileReference section */
 		3C2663E7147A27D100E5F63E /* rs8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rs8.c; sourceTree = "<group>"; };
 		3C2663E8147A27D100E5F63E /* rs8.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rs8.h; sourceTree = "<group>"; };
+		3C6262EF149D9FD700125C66 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		3C6E7986147DE962006A7D8C /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		3C6E7987147DFCF5006A7D8C /* hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hardware.h; sourceTree = "<group>"; };
 		3C6E7988147DFCF5006A7D8C /* MRF49XA_definitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MRF49XA_definitions.h; sourceTree = "<group>"; };
@@ -26,6 +27,7 @@
 		3CACE0761478A10200CF261D = {
 			isa = PBXGroup;
 			children = (
+				3C6262EF149D9FD700125C66 /* README */,
 				3C6E798D147F6AD7006A7D8C /* Descriptors.c */,
 				3C6E798E147F6AD7006A7D8C /* Descriptors.h */,
 				3C6E7986147DE962006A7D8C /* main.c */,
