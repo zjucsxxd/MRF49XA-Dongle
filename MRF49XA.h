@@ -35,7 +35,7 @@ uint16_t MRF_statusRead(void);
 // included in the payloadSize field in the MRF_PACKET_OVERHEAD define.
 //
 // These defined may be used to access the maximum payload length in the app.
-#define MRF_PAYLOAD_LEN     96
+#define MRF_PAYLOAD_LEN     64
 
 typedef struct {
     char  payloadSize;   // Total size of the payload
@@ -44,12 +44,12 @@ typedef struct {
 } MRF_packet_t;
 
 // These defines are used internally to the library, they include 
-// the maximum packet size for basic sanity checking, and for internal buffers
-#define MRF_PACKET_LEN      sizeof(MRF_packet_t)
-// Space for preamble, sync, and dummy
-#define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
 // Packet overhead (length)
 #define MRF_PACKET_OVERHEAD 2
+// the maximum packet size for internal buffers
+#define MRF_PACKET_LEN      MRF_PAYLOAD_LEN + MRF_PACKET_OVERHEAD
+// Space for preamble, sync, and dummy
+#define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
 
 // Packet based functions
 void MRF_transmit_packet(MRF_packet_t *packet);
