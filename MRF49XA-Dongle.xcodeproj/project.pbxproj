@@ -6,9 +6,32 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3C4A304E14BFAE62004C7B90 /* hamming_test.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3C4A304D14BFAE62004C7B90 /* hamming_test.1 */; };
+		3C4A305314BFAE7F004C7B90 /* generate-tables.c in Sources */ = {isa = PBXBuildFile; fileRef = 3C4A2FCC14BE670A004C7B90 /* generate-tables.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3C4A304014BFAE62004C7B90 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				3C4A304E14BFAE62004C7B90 /* hamming_test.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		3C2663E7147A27D100E5F63E /* rs8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rs8.c; sourceTree = "<group>"; };
 		3C2663E8147A27D100E5F63E /* rs8.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rs8.h; sourceTree = "<group>"; };
+		3C4A2FCC14BE670A004C7B90 /* generate-tables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "generate-tables.c"; path = "../generate-tables.c"; sourceTree = "<group>"; };
+		3C4A304214BFAE62004C7B90 /* hamming-test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "hamming-test"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C4A304614BFAE62004C7B90 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		3C4A304C14BFAE62004C7B90 /* hamming-test-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "hamming-test-Prefix.pch"; sourceTree = "<group>"; };
+		3C4A304D14BFAE62004C7B90 /* hamming_test.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = hamming_test.1; sourceTree = "<group>"; };
 		3C6262EF149D9FD700125C66 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		3C6E7986147DE962006A7D8C /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		3C6E7987147DFCF5006A7D8C /* hardware.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hardware.h; sourceTree = "<group>"; };
@@ -23,7 +46,51 @@
 		3CACE1941478B0B800CF261D /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		3C4A303F14BFAE62004C7B90 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		3C4A304314BFAE62004C7B90 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3C4A304214BFAE62004C7B90 /* hamming-test */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3C4A304514BFAE62004C7B90 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3C4A304614BFAE62004C7B90 /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		3C4A304814BFAE62004C7B90 /* hamming-test */ = {
+			isa = PBXGroup;
+			children = (
+				3C4A2FCC14BE670A004C7B90 /* generate-tables.c */,
+				3C4A304D14BFAE62004C7B90 /* hamming_test.1 */,
+				3C4A304B14BFAE62004C7B90 /* Supporting Files */,
+			);
+			path = "hamming-test";
+			sourceTree = "<group>";
+		};
+		3C4A304B14BFAE62004C7B90 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				3C4A304C14BFAE62004C7B90 /* hamming-test-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		3CACE0761478A10200CF261D = {
 			isa = PBXGroup;
 			children = (
@@ -41,6 +108,9 @@
 				3C6E798A147DFCF5006A7D8C /* MRF49XA.h */,
 				3C6E798B147DFCF5006A7D8C /* spi.c */,
 				3C6E798C147DFCF5006A7D8C /* spi.h */,
+				3C4A304814BFAE62004C7B90 /* hamming-test */,
+				3C4A304514BFAE62004C7B90 /* Frameworks */,
+				3C4A304314BFAE62004C7B90 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,6 +132,26 @@
 		};
 /* End PBXLegacyTarget section */
 
+/* Begin PBXNativeTarget section */
+		3C4A304114BFAE62004C7B90 /* hamming-test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3C4A305114BFAE62004C7B90 /* Build configuration list for PBXNativeTarget "hamming-test" */;
+			buildPhases = (
+				3C4A303E14BFAE62004C7B90 /* Sources */,
+				3C4A303F14BFAE62004C7B90 /* Frameworks */,
+				3C4A304014BFAE62004C7B90 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "hamming-test";
+			productName = "hamming-test";
+			productReference = 3C4A304214BFAE62004C7B90 /* hamming-test */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
 /* Begin PBXProject section */
 		3CACE0781478A10200CF261D /* Project object */ = {
 			isa = PBXProject;
@@ -77,15 +167,46 @@
 				en,
 			);
 			mainGroup = 3CACE0761478A10200CF261D;
+			productRefGroup = 3C4A304314BFAE62004C7B90 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				3CACE07D1478A10300CF261D /* MRF49XA-Dongle */,
+				3C4A304114BFAE62004C7B90 /* hamming-test */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXSourcesBuildPhase section */
+		3C4A303E14BFAE62004C7B90 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C4A305314BFAE7F004C7B90 /* generate-tables.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
 /* Begin XCBuildConfiguration section */
+		3C4A304F14BFAE62004C7B90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "hamming-test/hamming-test-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		3C4A305014BFAE62004C7B90 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "hamming-test/hamming-test-Prefix.pch";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		3CACE07E1478A10300CF261D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -155,6 +276,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3C4A305114BFAE62004C7B90 /* Build configuration list for PBXNativeTarget "hamming-test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3C4A304F14BFAE62004C7B90 /* Debug */,
+				3C4A305014BFAE62004C7B90 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		3CACE07B1478A10200CF261D /* Build configuration list for PBXProject "MRF49XA-Dongle" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
