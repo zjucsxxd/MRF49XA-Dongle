@@ -121,7 +121,7 @@ LUFA_PATH = ..
 # LUFA library compile-time options and predefined tokens
 LUFA_OPTS  = -D USB_DEVICE_ONLY
 LUFA_OPTS += -D LUFA_SRC_USBCLASS
-LUFA_OPTS += -D INTERRUPT_CONTROL_ENDPOINT
+# LUFA_OPTS += -D INTERRUPT_CONTROL_ENDPOINT
 LUFA_OPTS += -D FIXED_CONTROL_ENDPOINT_SIZE=8
 LUFA_OPTS += -D FIXED_NUM_CONFIGURATIONS=1
 LUFA_OPTS += -D USE_FLASH_DESCRIPTORS
@@ -135,7 +135,12 @@ include $(LUFA_PATH)/LUFA/makefile
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c                                                 \
       spi.c                                                       \
-      rs8.c                                                       \
+      menu.c                                                      \
+      hamming.c                                                   \
+      utilities.c                                                 \
+      registers.c                                                 \
+      serial.c                                                    \
+      packet.c                                                    \
       Descriptors.c                                               \
       MRF49XA.c                                                   \
 	  $(LUFA_SRC_USB)                                             \
@@ -159,7 +164,7 @@ ASRC =
 # Optimization level, can be [0, 1, 2, 3, s].
 #     0 = turn off optimization. s = optimize for size.
 #     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
-OPT = 1
+OPT = s
 
 
 # Debugging format.
@@ -216,7 +221,7 @@ CPPDEFS += $(LUFA_OPTS)
 #    -adhlns...: create assembler listing
 CFLAGS = -g$(DEBUG)
 CFLAGS += $(CDEFS)
-CFLAGS += -O$(OPT)
+CFLAGS += -O$(OPT) -mcall-prologues
 CFLAGS += -funsigned-char
 CFLAGS += -funsigned-bitfields
 CFLAGS += -ffunction-sections
@@ -347,10 +352,10 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 AVRDUDE_PROGRAMMER = AVR109
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
-AVRDUDE_PORT = /dev/tty.usbmodemfd121
+AVRDUDE_PORT = /dev/tty.usbmodem1411
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-#AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
+AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
 
 # Uncomment the following if you want avrdude's erase cycle counter.
@@ -408,12 +413,12 @@ DEBUG_HOST = localhost
 
 # Define programs and commands.
 SHELL = sh
-CC = /usr/local/CrossPack-AVR/bin/avr-gcc
-OBJCOPY = /usr/local/CrossPack-AVR/bin/avr-objcopy
-OBJDUMP = /usr/local/CrossPack-AVR/bin/avr-objdump
-SIZE = /usr/local/CrossPack-AVR/bin/avr-size
-AR = /usr/local/CrossPack-AVR/bin/avr-ar rcs
-NM = /usr/local/CrossPack-AVR/bin/avr-nm
+CC = /opt/local/bin/avr-gcc
+OBJCOPY = /opt/local/bin/avr-objcopy
+OBJDUMP = /opt/local/bin/avr-objdump
+SIZE = /opt/local/bin/avr-size
+AR = /opt/local/bin/avr-ar rcs
+NM = /opt/local/bin/avr-nm
 AVRDUDE = avrdude
 REMOVE = rm -f
 REMOVEDIR = rm -rf
