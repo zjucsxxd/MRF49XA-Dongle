@@ -13,9 +13,13 @@
 
 #include <stdio.h>
 
+uint8_t apply_gen_matrix(uint8_t input, uint8_t matrix[4]);
+uint8_t apply_check_matrix(uint8_t input, uint8_t matrix[8]);
+uint8_t get_hamming_distance(uint8_t a, uint8_t b);
+
 // This is a binary matrix used to generate codewords
 // These are the matricies from Wolfram Alpha. (systematic form)
-char gen_matrix[4] = {
+uint8_t gen_matrix[4] = {
     0x8E,
     0x4D,
     0x2B,
@@ -26,7 +30,7 @@ char gen_matrix[4] = {
 // matrix semantics for this case are very inconvenient with binary
 // operations.  Basically, we're treating the 'char' type as an 8
 // bit wide SIMD type of binary values.  But, we only use the bottom 4
-char check_matrix[8] = {
+uint8_t check_matrix[8] = {
     0xE,
     0xD,
     0xB,
@@ -39,15 +43,15 @@ char check_matrix[8] = {
 
 // Even though the input is a char, only the low-order
 // 4 bits are used for generating the codeword.
-unsigned char apply_gen_matrix(char input, char matrix[4])
+uint8_t apply_gen_matrix(uint8_t input, uint8_t matrix[4])
 {
-    char output = 0;
+    uint8_t output = 0;
     
     // Scan across each bit, If the bit is a one,
     // apply the matrix row with an xor.
     // this successfully approximates binary matrix multiplication
-    char mask = 0x08;
-    char i;
+    uint8_t mask = 0x08;
+    uint8_t i;
     for (i = 0; i < 4; i++) {
         if (input & mask) {
             output ^= gen_matrix[i];
@@ -62,15 +66,15 @@ unsigned char apply_gen_matrix(char input, char matrix[4])
 // This function applies the check matrix to the 8 bit
 // input.  The return value is the syndrome.  If the
 // syndrome is '0000', then there were no errors.
-unsigned char apply_check_matrix(char input, char matrix[8])
+uint8_t apply_check_matrix(uint8_t input, uint8_t matrix[8])
 {
-    char output = 0;
+    uint8_t output = 0;
     
     // Scan across each bit, If the bit is a one,
     // apply the matrix row with an xor.
     // this successfully approximates binary matrix multiplication
-    unsigned char mask = 0x80;
-    char i;
+    uint8_t mask = 0x80;
+    uint8_t i;
     for (i = 0; i < 8; i++) {
         //        mask = (1 << (7 - i));
         if (input & mask) {
@@ -83,15 +87,15 @@ unsigned char apply_check_matrix(char input, char matrix[8])
     return output;    
 }
 
-unsigned char get_hamming_distance(unsigned char a, unsigned char b)
+uint8_t get_hamming_distance(uint8_t a, uint8_t b)
 {
-    unsigned char output = 0;
+    uint8_t output = 0;
     
     // Keep only the bit differences between arguments
-    unsigned char difference = a ^ b;
+    uint8_t difference = a ^ b;
 
     // Count the '1's in the difference
-    unsigned char i, mask = 0x80;
+    uint8_t i, mask = 0x80;
     for (i = 0; i < 8; i++) {
         if (difference & mask) {
             output++;
@@ -105,36 +109,36 @@ unsigned char get_hamming_distance(unsigned char a, unsigned char b)
 
 int main (int argc, const char * argv[])
 {
-    int counts[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+    uint16_t counts[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
     
-    char i;
+    uint8_t i;
     
-    unsigned char codewords[16];
+    uint8_t codewords[16];
     
     printf("Generator table:\n");
     for (i = 0; i < 16; i++) {
-        unsigned char output = apply_gen_matrix(i, gen_matrix);
+        uint8_t output = apply_gen_matrix(i, gen_matrix);
         printf("0x%02x\n", output);
         codewords[i] = output;
     }
     
     printf("\nCheck table:\n");
-    char j;
+    uint8_t j;
     for (i = 0; i < 16; i++) {
         for (j = 0; j < 16; j++) {
-            unsigned char codeword = (i << 4) | j;
-            unsigned char output = apply_check_matrix(codeword, check_matrix);
-            unsigned char value = 0;
+            uint8_t codeword = (i << 4) | j;
+            uint8_t output = apply_check_matrix(codeword, check_matrix);
+            uint8_t value = 0;
             
             // If the syndrome is not zero, attempt to fix the error
             if (output != 0) {
-                char k;
+                uint8_t k;
                 
                 // Calculate the hamming distance between
                 // this message and the codewords.
                 // Select the lowest distance codeword,
                 // break ties with the data part of the codeword
-                unsigned char distances[16];
+                uint8_t distances[16];
                 for (k = 0; k < 16; k++) {
                     distances[k] = get_hamming_distance(codeword, codewords[k]);
                 }
