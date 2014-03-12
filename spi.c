@@ -92,8 +92,67 @@ void spi_write8(uint8_t data, volatile uint8_t *enable_port, uint8_t enable_pin)
 	mutex = 0;
 }
 
-void spi_write16(uint16_t data, volatile uint8_t *enable_port, uint8_t enable_pin)
-{
+void spi_write16(uint16_t data, uint16_t mask,
+                 volatile uint8_t *enable_port, uint8_t enable_pin)
+{/*
+    int i = 0;
+    
+    // Spin on the mutex
+    while (mutex);
+    mutex = 1;
+    
+    // Bring the enable pin low to enable SPI on the peripheral
+    *enable_port &= ~(1 << enable_pin);
+    spi_read_buffer = 0;
+    
+    for (i = 0; i < 16; i++) {
+        
+        // Are we forcing the MOSI pin (mask set to 1)
+        if (mask & 0x8000) {
+            if (data & 0x8000) {
+                SPI_MOSI_PORTx |=  (1 << SPI_MOSI_BIT); // Set port value to 1
+            } else {
+                SPI_MOSI_PORTx &= ~(1 << SPI_MOSI_BIT); // Set port value to 0
+            }
+        }
+        
+        // Otherwise, set the MOSI pin to match the MISO pin
+        else {
+            if (bit_is_set(SPI_MISO_PINx, SPI_MISO_BIT)) {
+                SPI_MOSI_PORTx |=  (1 << SPI_MOSI_BIT); // Set port value to 1
+            } else {
+                SPI_MOSI_PORTx &= ~(1 << SPI_MOSI_BIT); // Set port value to 0
+            }
+            
+        }
+        
+        // Shift read buffer contents
+        spi_read_buffer = spi_read_buffer << 1;
+        
+        // Read MISO
+        if (bit_is_set(SPI_MISO_PINx, SPI_MISO_BIT)) {
+            spi_read_buffer |= 0x01;
+        }
+        
+        // Data valid on rising edge of the clock
+        SPI_SCLK_PORTx |=  (1 << SPI_SCLK_BIT); // Set clock value to 1
+        
+        // Shift input data
+        data = data << 1;
+        
+        // Shift the mask
+        mask = mask << 1;
+        
+        // Data change on falling edge
+        SPI_SCLK_PORTx &= ~(1 << SPI_SCLK_BIT); // Set clock value to 0
+    }
+    
+    // Return the enable pin and MOSI to the inactive state
+    SPI_MOSI_PORTx &= ~(1 << SPI_MOSI_BIT); // Set port value to 0
+    *enable_port |= (1 << enable_pin);
+    
+    mutex = 0;
+*/
 	int i = 0;
 	
 	// Spin on the mutex
@@ -134,6 +193,7 @@ void spi_write16(uint16_t data, volatile uint8_t *enable_port, uint8_t enable_pi
 	*enable_port |= (1 << enable_pin);
 	
 	mutex = 0;
+
 }
 
 #else

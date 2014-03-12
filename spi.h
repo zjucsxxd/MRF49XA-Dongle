@@ -19,4 +19,5 @@ uint16_t spi_read16(void);
 
 // Write functions for 8 and 16 bit transfers
 void spi_write8 (uint8_t  data, volatile uint8_t *enable_port, uint8_t enable_pin);
-void spi_write16(uint16_t data, volatile uint8_t *enable_port, uint8_t enable_pin);
+//void spi_write16(uint16_t data, volatile uint8_t *enable_port, uint8_t enable_pin);
+void spi_write16(uint16_t data, uint16_t mask, volatile uint8_t *enable_port, uint8_t enable_pin);
