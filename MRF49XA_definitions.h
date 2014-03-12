@@ -291,31 +291,31 @@
 
 // Modulation bandwidth settings
 #define MRF_MODBW_240K	0x00F0		// 240kHz modulation bandwidth
-#define MRF_MODBW_225K	0x00E0		// 240kHz modulation bandwidth
-#define MRF_MODBW_210K	0x00D0		// 240kHz modulation bandwidth
-#define MRF_MODBW_195K	0x00C0		// 240kHz modulation bandwidth
-#define MRF_MODBW_180K	0x00B0		// 240kHz modulation bandwidth
-#define MRF_MODBW_165K	0x00A0		// 240kHz modulation bandwidth
-#define MRF_MODBW_150K	0x0090		// 240kHz modulation bandwidth
-#define MRF_MODBW_135K	0x0080		// 240kHz modulation bandwidth
-#define MRF_MODBW_120K	0x0070		// 240kHz modulation bandwidth
-#define MRF_MODBW_105K	0x0060		// 240kHz modulation bandwidth
-#define MRF_MODBW_90K	0x0050		// 240kHz modulation bandwidth
-#define MRF_MODBW_75K	0x0040		// 240kHz modulation bandwidth
-#define MRF_MODBW_60K	0x0030		// 240kHz modulation bandwidth
-#define MRF_MODBW_45K	0x0020		// 240kHz modulation bandwidth
-#define MRF_MODBW_30K	0x0010		// 240kHz modulation bandwidth
-#define MRF_MODBW_15K	0x0000		// 240kHz modulation bandwidth
+#define MRF_MODBW_225K	0x00E0		// 225kHz modulation bandwidth
+#define MRF_MODBW_210K	0x00D0		// 210kHz modulation bandwidth
+#define MRF_MODBW_195K	0x00C0		// 195kHz modulation bandwidth
+#define MRF_MODBW_180K	0x00B0		// 180kHz modulation bandwidth
+#define MRF_MODBW_165K	0x00A0		// 165kHz modulation bandwidth
+#define MRF_MODBW_150K	0x0090		// 150kHz modulation bandwidth
+#define MRF_MODBW_135K	0x0080		// 135kHz modulation bandwidth
+#define MRF_MODBW_120K	0x0070		// 120kHz modulation bandwidth
+#define MRF_MODBW_105K	0x0060		// 105kHz modulation bandwidth
+#define MRF_MODBW_90K	0x0050		//  90kHz modulation bandwidth
+#define MRF_MODBW_75K	0x0040		//  75kHz modulation bandwidth
+#define MRF_MODBW_60K	0x0030		//  60kHz modulation bandwidth
+#define MRF_MODBW_45K	0x0020		//  45kHz modulation bandwidth
+#define MRF_MODBW_30K	0x0010		//  30kHz modulation bandwidth
+#define MRF_MODBW_15K	0x0000		//  15kHz modulation bandwidth
 
 // Output power settings
 #define MRF_OTXPWR_17D5	0x0007		// -17.5dB Transmit Output Power
 #define MRF_OTXPWR_15D0	0x0006		// -15.0dB Transmit Output Power
 #define MRF_OTXPWR_12D5	0x0005		// -12.5dB Transmit Output Power
 #define MRF_OTXPWR_10D5	0x0004		// -10.5dB Transmit Output Power
-#define MRF_OTXPWR_7D5	0x0003		// -7.5dB Transmit Output Power
-#define MRF_OTXPWR_5D0	0x0002		// -5.0dB Transmit Output Power
-#define MRF_OTXPWR_2D5	0x0001		// -2.5dB Transmit Output Power
-#define MRF_OTXPWR_0	0x0000		//  0dB Transmit Output Power
+#define MRF_OTXPWR_7D5	0x0003		// - 7.5dB Transmit Output Power
+#define MRF_OTXPWR_5D0	0x0002		// - 5.0dB Transmit Output Power
+#define MRF_OTXPWR_2D5	0x0001		// - 2.5dB Transmit Output Power
+#define MRF_OTXPWR_0	0x0000		//   0.0dB Transmit Output Power
 
 /*******************************************************************************
  * Convenience definitions for data rate value set register
