@@ -47,20 +47,16 @@
 #define MRF_FSEL_DDRx	DDRB
 #define MRF_FSEL_BIT	5
 
+#define MRF_DIO_PINx	PINB
+#define MRF_DIO_PORTx	PORTB
+#define MRF_DIO_DDRx	DDRB
+#define MRF_DIO_BIT     6
 
-#ifdef BOARD_USBKEY
-#define MRF_IRO_PINx	PINE
-#define MRF_IRO_PORTx	PORTE
-#define MRF_IRO_DDRx	DDRE
-#define MRF_IRO_BIT		4
+#define MRF_RCLK_PINx	PINB
+#define MRF_RCLK_PORTx	PORTB
+#define MRF_RCLK_DDRx	DDRB
+#define MRF_RCLK_BIT	7
 
-#define LED_PORTx       PORTD
-#define LED_DDRx        DDRD
-#define LED_POWER       4
-#define LED_TX          5
-#define LED_RX          6
-
-#else
 #define LED_PORTx       PORTC
 #define LED_DDRx        DDRC
 #define LED_POWER       4
@@ -71,8 +67,6 @@
 #define MRF_IRO_PORTx	PORTC
 #define MRF_IRO_DDRx	DDRC
 #define MRF_IRO_BIT		7
-#endif
-
 
 #define MRF_IRO_VECTOR	INT4_vect
 
@@ -88,12 +82,8 @@
  ******************************************************************************/
 // Set the module to 434 Mhz band, with 10pF series capactance crystal
 #define MRF_GENCREG_SET		(MRF_GENCREG | (MRF_LCS & MRF_LCS_MASK) | MRF_FBS_434)
-#define MRF_AFCCREG_SET		(MRF_AFCCREG | MRF_AUTOMS_INDP | MRF_ARFO_3to4 | MRF_HAM | MRF_FOREN | MRF_FOFEN)
+#define MRF_AFCCREG_SET		(MRF_AFCCREG | MRF_AUTOMS_INDP | MRF_ARFO_3to4 | MRF_HAM | MRF_FOFEN) // defaults
 #define MRF_PLLCREG_SET		(MRF_PLLCREG | MRF_CBTC_5p)
-#define	MRF_CFSREG_SET		(MRF_CFSREG  | (MRF_FREQB & MRF_FREQB_MASK))
-#define MRF_RXCREG_SET		(MRF_RXCREG  | MRF_FINTDIO | MRF_RXBW_67K | MRF_DRSSIT_103db)
-#define MRF_TXCREG_SET		(MRF_TXCREG  | MRF_MODBW_30K | MRF_OTXPWR_0)
-#define MRF_DRSREG_SET		(MRF_DRSREG  | (MRF_DRPV_VALUE & MRF_DRPV_MASK))
 #define MRF_FIFOSTREG_SET	(MRF_FIFORSTREG | MRF_DRSTM | ((8 << 4) & MRF_FFBC_MASK))
 
 #endif
