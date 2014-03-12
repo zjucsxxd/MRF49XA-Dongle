@@ -50,12 +50,29 @@ volatile uint8_t	transmit_buffer[MRF_TX_PACKET_LEN];
 
 volatile uint16_t	mrf_status;
 
-#define RegisterSet(setting) spi_write16(setting, &MRF_CS_PORTx, MRF_CS_BIT)
+static volatile uint8_t fiforstregUser = MRF_DRSTM;
+
+#define RegisterSet(setting) spi_write16(setting, 0xFFFF, &MRF_CS_PORTx, MRF_CS_BIT)
+
+extern volatile uint8_t mutex;
+
+void MRF_registerSet(uint16_t value)
+{
+    // We need to detect whether the FIFORSTREG is being set.  There are user
+    // flags and core flags in the same register, therefore, we need to save
+    // the user parts of it, and bitwise-OR them with the core flags.
+    if (value & 0xFF00 == MRF_FIFORSTREG) {
+        fiforstregUser = value & (MRF_DRSTM | MRF_SYCHLEN); // Filter-out all but the user fields
+        return;
+    }
+    
+    RegisterSet(value);
+}
 
 uint16_t MRF_statusRead(void)
 {
-	spi_write16(0x0000, &MRF_CS_PORTx, MRF_CS_BIT);
-	return spi_read16();
+    spi_write16(0x0000, 0xFFFF, &MRF_CS_PORTx, MRF_CS_BIT);
+    return spi_read16();
 }
 
 static inline uint8_t MRF_fifo_read(void)
@@ -67,10 +84,10 @@ static inline uint8_t MRF_fifo_read(void)
 void MRF_reset(void)
 {
 	RegisterSet(MRF_PMCREG);
-	RegisterSet(MRF_FIFOSTREG_SET);
+	RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
 	RegisterSet(MRF_GENCREG_SET);
 	RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
-	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
+	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF | fiforstregUser);
 	RegisterSet(MRF_PMCREG | MRF_RXCEN);	
 
     mrf_status = MRF_IDLE;
@@ -133,8 +150,8 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 					// Disable transmitter, enable receiver
 					RegisterSet(MRF_PMCREG | MRF_RXCEN);
 					RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
-					RegisterSet(MRF_FIFOSTREG_SET);
-					RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
+					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
+					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
 					
 					// Return the state
 					mrf_state = MRF_IDLE;
@@ -148,7 +165,7 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
                 bl = MRF_fifo_read();
 
                 // Convert the packet to a linear string of bytes
-                char *packet_bytes = (char *)receiving_packet;
+                uint8_t *packet_bytes = (uint8_t *)receiving_packet;
                 
                 packet_bytes[counter++] = bl;
                 
@@ -157,8 +174,8 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
                                MRF_PACKET_OVERHEAD) {
 
 					// Reset the FIFO
-					RegisterSet(MRF_FIFOSTREG_SET);
-					RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);
+					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
+					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
 
 					// Swap packet structures
 					finished_packet = receiving_packet;
@@ -202,8 +219,11 @@ ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 	}	
 }
 
-void MRF_init(void)
+void MRF_init()
 {
+    // The Chip Select is the only SPI pin that needs to be set here.
+    // The rest are taken care of in the SPI init function.
+    
 	// Enable the IRO pin as input w/o pullup
 	MRF_IRO_PORTx &= ~(1 << MRF_IRO_BIT);
 	MRF_IRO_DDRx  &= ~(1 << MRF_IRO_BIT);
@@ -219,21 +239,15 @@ void MRF_init(void)
 	// Enable the External interrupt for the IRO pin (falling edge)
     MRF_INT_SETUP();
 	
-    // Enable outputs for the LEDs (both high during init)
-    LED_PORTx     |=  (1 << LED_TX) | (1 << LED_RX);
-    LED_DDRx      |=  (1 << LED_TX) | (1 << LED_RX);
-    
 	// configuring the MRF49XA radio
-	RegisterSet(MRF_FIFOSTREG_SET);	// Set 8 bit FIFO interrupt count
+	RegisterSet(MRF_FIFOSTREG_SET);             // Set 8 bit FIFO interrupt count
 	RegisterSet(MRF_FIFOSTREG_SET | MRF_FSCF);	// Enable sync. latch
-	RegisterSet(MRF_GENCREG_SET);	// From the header: 434mhz, 10pF
-    RegisterSet(MRF_AFCCREG_SET);
-    RegisterSet(MRF_CFSREG_SET);
-    RegisterSet(MRF_DRSREG_SET);			// Approx. 9600 baud
-    RegisterSet(MRF_PMCREG | MRF_CLKODIS);	// Shutdown everything
-    RegisterSet(MRF_RXCREG_SET);
-    RegisterSet(MRF_TXCREG_SET);
-	RegisterSet(MRF_BBFCREG | MRF_ACRLC | (4 & MRF_DQTI_MASK));
+	RegisterSet(MRF_GENCREG_SET);               // From the header: 434mhz, 10pF
+    RegisterSet(MRF_PMCREG | MRF_CLKODIS);      // Shutdown everything
+
+    RegisterSet(MRF_TXCREG  | MRF_MODBW_30K | MRF_OTXPWR_0);
+    RegisterSet(MRF_RXCREG  | MRF_FINTDIO   | MRF_RXBW_67K | MRF_DRSSIT_103db);
+    RegisterSet(MRF_BBFCREG | MRF_ACRLC | (4 & MRF_DQTI_MASK));
 
     // antenna tuning on startup
     RegisterSet(MRF_PMCREG | MRF_CLKODIS | MRF_TXCEN); // turn on the transmitter
@@ -254,11 +268,21 @@ void MRF_init(void)
 	
     mrf_state = MRF_IDLE;
     
-    // Turn off the LEDs
-    LED_PORTx &= ~(1 << LED_RX) & ~(1 << LED_TX);
-    
 	// Enable interrupt last, just in case they're already globally enabled
 	MRF_INT_MASK();
+}
+
+void MRF_set_freq(uint16_t freqb)
+{
+    // Mask the input value
+    freqb = freqb & MRF_FREQB_MASK;
+    
+    // Make sure it's within the range (do nothing if its not)
+    if (freqb < 97 || freqb > 3903) {
+        return;
+    }
+    
+    RegisterSet(MRF_CFSREG | freqb);
 }
 
 // Testing functions
@@ -404,7 +428,7 @@ void MRF_transmit_packet(MRF_packet_t *packet)
 	transmit_buffer[2] = 0xD4;
 
     // Copy the packet (including the fields before the payload)
-    char *packet_bytes = (char *)packet;
+    uint8_t *packet_bytes = (uint8_t *)packet;
     for (i = 0; i < packet->payloadSize + MRF_PACKET_OVERHEAD; i++) {
         transmit_buffer[3 + i] = packet_bytes[i];
     }
