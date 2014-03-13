@@ -416,7 +416,7 @@ SHELL = sh
 CC = /opt/local/bin/avr-gcc
 OBJCOPY = /opt/local/bin/avr-objcopy
 OBJDUMP = /opt/local/bin/avr-objdump
-SIZE = /opt/local/bin/avr-size
+SIZE = /Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avr-size
 AR = /opt/local/bin/avr-ar rcs
 NM = /opt/local/bin/avr-nm
 AVRDUDE = avrdude
@@ -534,7 +534,9 @@ flip: $(TARGET).hex
 dfu: $(TARGET).hex
 	dfu-programmer $(MCU) erase
 	dfu-programmer $(MCU) flash $(TARGET).hex
+	dfu-programmer $(MCU) flash-eeprom $(TARGET).eep
 	dfu-programmer $(MCU) reset
+	dfu-programmer $(MCU) start
 
 flip-ee: $(TARGET).hex $(TARGET).eep
 	$(COPY) $(TARGET).eep $(TARGET)eep.hex
@@ -544,7 +546,7 @@ flip-ee: $(TARGET).hex $(TARGET).eep
 	$(REMOVE) $(TARGET)eep.hex
 
 dfu-ee: $(TARGET).hex $(TARGET).eep
-	dfu-programmer $(MCU) eeprom-flash $(TARGET).eep
+	dfu-programmer $(MCU) flash-eeprom $(TARGET).eep
 	dfu-programmer $(MCU) reset
 
 
