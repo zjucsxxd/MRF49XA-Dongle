@@ -63,6 +63,8 @@ volatile uint8_t textBuffer[11];
 // Global variable for holding the device mode
 volatile enum device_mode mode = MENU;
 
+volatile uint16_t ticks = 0;
+
 #pragma mark USB logic
 /** LUFA CDC Class driver interface configuration and state information.
  *  This structure is passed to all CDC Class driver functions, so that
@@ -93,8 +95,12 @@ USB_ClassInfo_CDC_Device_t CDC_interface =
 // every 30mS.  I'm probably going to start running it twice that often.
 ISR(TIMER0_OVF_vect, ISR_NOBLOCK)
 {
-        CDC_Device_USBTask(&CDC_interface);
-        USB_USBTask();
+    // Increment the ticks counter
+    // which will overflow once every 536 seconds, or 8.94 minutes.
+    ticks++;
+    
+    CDC_Device_USBTask(&CDC_interface);
+    USB_USBTask();
 }
 
 // This is the "file" representing the USB stream
@@ -116,7 +122,6 @@ void EVENT_USB_Device_Connect(void)
 void EVENT_USB_Device_Disconnect(void)
 {
     configured = 0;
-//    LED_PORTx = LEDS_ERROR;
 }
 
 void EVENT_USB_Device_ConfigurationChanged(void)
@@ -125,7 +130,6 @@ void EVENT_USB_Device_ConfigurationChanged(void)
     
     if (success) {
         configured = 1;
-//        LED_PORTx = LEDS_READY;
         
         // Set HW flow control to allow communication
         setFlowControl_start();
@@ -144,19 +148,10 @@ void EVENT_USB_DEVICE_ConfigureEndpoints(void)
     CDC_Device_ConfigureEndpoints(&CDC_interface);
 }
 
+// Lets try to interpret a break as a request to enter the menu
 void EVENT_CDC_BreakSent(USB_ClassInfo_CDC_Device_t *const CDCInterfaceInfo, const uint8_t Duration)
 {
-    switch (mode) {
-        case SERIAL:
-        case SERIAL_ECC:
-            serialBreakReceived();
-            break;
-        case PACKET:
-        case PACKET_ECC:
-            packetBreakReceived();
-        default:
-            break;
-    }
+    mode = MENU;
 }
 
 #pragma mark Application logic
@@ -213,13 +208,13 @@ init(void) {
 
 const uint8_t pingString[]          PROGMEM = "PING\n\r";
 
-const uint8_t typeSerialString[]    PROGMEM = "Serial: ";
-const uint8_t typeSerialECCString[] PROGMEM = "Serial ECC: ";
-const uint8_t typePacketString[]    PROGMEM = "Packet: ";
-const uint8_t typePacketECCString[] PROGMEM = "Packet ECC: ";
-const uint8_t typeUnknownString[]   PROGMEM = "Unknown type: ";
+const uint8_t typeSerialString[]    PROGMEM = "\n\rSerial, ";
+const uint8_t typeSerialECCString[] PROGMEM = "\n\rSerial ECC, ";
+const uint8_t typePacketString[]    PROGMEM = "\n\rPacket, ";
+const uint8_t typePacketECCString[] PROGMEM = "\n\rPacket ECC, ";
+const uint8_t typeUnknownString[]   PROGMEM = "\n\rUnknown type, ";
 const uint8_t packetLengthString[]  PROGMEM = "length ";
-
+const uint8_t invalidModeString[]   PROGMEM = " Invalid mode, ";
 
 void printPacket(MRF_packet_t *rx_packet)
 {
@@ -245,7 +240,7 @@ void printPacket(MRF_packet_t *rx_packet)
     // Print the packet length
     sendStringP(packetLengthString);
     print_dec(rx_packet->payloadSize);
-    CDC_Device_SendByte(&CDC_interface, ',');
+    CDC_Device_SendByte(&CDC_interface, ':');
     CDC_Device_SendByte(&CDC_interface, ' ');
     
     // Print the packet contents
@@ -256,17 +251,18 @@ void printPacket(MRF_packet_t *rx_packet)
         }
         
         uint8_t byte = rx_packet->payload[i];
-        if (byte & 0xF0 > 0x90) {
-            CDC_Device_SendByte(&CDC_interface, ((byte & 0xF0) >> 4) + 'A');
-        } else {
-            CDC_Device_SendByte(&CDC_interface, ((byte & 0xF0) >> 4) + '0');
-        }
-        
-        if (byte & 0x0F > 0x09) {
-            CDC_Device_SendByte(&CDC_interface, (byte & 0x0F) + 'A');
-        } else {
-            CDC_Device_SendByte(&CDC_interface, (byte & 0x0F) + '0');
-        }
+        CDC_Device_SendByte(&CDC_interface, byte);
+//        if (byte & 0xF0 > 0x90) {
+//            CDC_Device_SendByte(&CDC_interface, ((byte & 0xF0) >> 4) + 'A');
+//        } else {
+//            CDC_Device_SendByte(&CDC_interface, ((byte & 0xF0) >> 4) + '0');
+//        }
+//        
+//        if (byte & 0x0F > 0x09) {
+//            CDC_Device_SendByte(&CDC_interface, (byte & 0x0F) + 'A');
+//        } else {
+//            CDC_Device_SendByte(&CDC_interface, (byte & 0x0F) + '0');
+//        }
     }
     
     CDC_Device_Flush(&CDC_interface);
@@ -332,9 +328,13 @@ int main(void) {
                 case SERIAL:
                 case SERIAL_ECC:
                     serialMainLoop();
+                    break;
 
                 default:
                     // This would catch any weird modes
+                    sendStringP(invalidModeString);
+                    print_dec(mode);
+                    CDC_Device_Flush(&CDC_interface);
                     mode = MENU;
                     break;
             }
