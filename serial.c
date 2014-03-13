@@ -10,6 +10,7 @@
 #include "modes.h"
 #include "MRF49XA.h"
 #include "hamming.h"
+#include "utilities.h"
 #include <LUFA/Drivers/USB/Class/Device/CDC.h>
 #include <LUFA/Drivers/USB/USB.h>
 
@@ -19,55 +20,71 @@ extern volatile enum device_mode mode;
 extern volatile uint8_t counter;
 extern volatile MRF_packet_t packet;
 
-// Byte received from the USB port
-void byteReceved(uint8_t byte)
+// Send a partially-filled packet if we don't receive a byte in 1/10 of a second
+#define TICKS_BYTE_DEADLINE 36
+extern volatile uint16_t ticks;
+
+void serialTransmitPacket(void)
 {
-    uint16_t *symbols = (uint16_t *)packet.payload;
-//    CDC_Device_SendByte(&CDC_interface, byte);
+    // Disable new serial data during this routine
+    setFlowControl_stop();
     
-    // Fill out the packet contents
-    switch (counter) {
-        case 0:
-            // Sanity checking on the length byte
-            if (byte <= MRF_PAYLOAD_LEN) {
-                packet.payloadSize = byte;
-                counter++;
-            }
-            break;
-        case 1:
-            packet.type = byte;
-            counter++;
-            break;
-        default:
-            // Encode the data using the Hamming code ECC
-            symbols[counter - 2] = hamming_encode(byte);
-            counter++;
-            break;
+    packet.payloadSize = counter;
+    if (mode == SERIAL_ECC) {
+        packet.type = PACKET_TYPE_SERIAL_ECC;
+    } else {
+        packet.type = PACKET_TYPE_SERIAL;
     }
     
-    // If the counter equals the packet size, transmit
-    if (counter >= packet.payloadSize + MRF_PACKET_OVERHEAD) {
-        // Disable new serial data during this routine
-        setFlowControl_stop();
-        MRF_transmit_packet(&packet);
-        setFlowControl_start();
-        
-        counter = 0;
-    }
+    MRF_transmit_packet(&packet);
+    counter = 0;
+
+    setFlowControl_start();
+}
+
+// Byte received from the USB port
+void serialByteReceved(uint8_t byte)
+{
+    packet.payload[counter++] = byte;
     
+    // Are we full yet?
+    if (counter == MRF_PAYLOAD_LEN) {
+        serialTransmitPacket();
+    }
 }
 
 void serialBreakReceived()
 {
-    // The break event has the effect of transmitting the current buffer
-    // regardless of the system state.  This can be used to force bad packets
-    // or to reset the state machine
-    MRF_transmit_packet(&packet);
-    counter = 0;
+    // If a break is sent, it's possible to send the packet immediately.
+    serialTransmitPacket;
 }
 
 void serialMainLoop(void)
 {
+    static uint16_t sendDeadline = 0;
+    
+    // Handle new bytes from USB
+    if (CDC_Device_BytesReceived(&CDC_interface) > 0) {
+        sendDeadline = ticks + TICKS_BYTE_DEADLINE;
+        serialByteReceved(CDC_Device_ReceiveByte(&CDC_interface));
+    }
+    
+    // If we've waited too long for a new byte send what we have so far
+    if (counter > 0) {
+        if (ticks > sendDeadline) {
+            serialTransmitPacket();
+        }
+    }
+    
+    // Handle new packets from radio
+    MRF_packet_t *rx_packet = MRF_receive_packet();
+    if (rx_packet) {
+        // Print the packet contents directly to USB
+        CDC_Device_SendData(&CDC_interface,
+                            rx_packet->payload,
+                            rx_packet->payloadSize);
+    }
+    
     return;
 }
 
