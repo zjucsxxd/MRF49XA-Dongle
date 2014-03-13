@@ -34,8 +34,8 @@ MRF49XA Dongle top menu\n\r\
 2) Test menu\n\r\
 3) Enter transparent serial mode\n\r\
 4) Enter packet serial mode\n\r\
-5x) Save boot state, set x to new start mode (0, 3 or 4 allowed)\n\r\n\r\
-6) Firmware Upload (DFU)\n\r\
+7x) Save boot state, set x to new start mode (0, 3 or 4 allowed)\n\r\
+8) Firmware Upload (DFU)\n\r\
 ?) Print this menu\n\r\
 > ";
 
@@ -244,7 +244,7 @@ Existing register contents:
     }
     
     // We have a selected index to modify
-    uint16_t value = 0;
+    uint16_t value;
     int8_t retval = read_hex_value(byte, &value);
     
     // Did we get a user cancel?
