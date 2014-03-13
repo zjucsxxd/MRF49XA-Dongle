@@ -9,6 +9,7 @@
 #include "packet.h"
 #include "modes.h"
 #include "MRF49XA.h"
+#include "utilities.h"
 #include <LUFA/Drivers/USB/Class/Device/CDC.h>
 #include <LUFA/Drivers/USB/USB.h>
 
@@ -23,7 +24,53 @@ void packetBreakReceived()
     return;
 }
 
+void packetByteReceived(uint8_t byte)
+{
+    // Fill out the packet contents
+    switch (counter) {
+            
+        case 0:
+            // Sanity checking on the length byte
+            if (byte <= MRF_PAYLOAD_LEN) {
+                packet.payloadSize = byte;
+                counter++;
+            }
+            break;
+            
+        case 1:
+            
+            if (mode == SERIAL_ECC) {
+                packet.type = PACKET_TYPE_SERIAL_ECC;
+            } else {
+                packet.type = PACKET_TYPE_SERIAL;
+            }
+            
+            counter++;
+            break;
+            
+        default:
+            packet.payload[counter - 2] = byte;
+            counter++;
+            break;
+    }
+    
+    // If the counter equals the packet size, transmit
+    if (counter >= packet.payloadSize + MRF_PACKET_OVERHEAD) {
+        // Disable new serial data during this routine
+        setFlowControl_stop();
+        MRF_transmit_packet(&packet);
+        setFlowControl_start();
+        counter = 0;
+    }
+
+}
+
 void packetMainLoop(void)
 {
+    // Handle new bytes from USB
+    if (CDC_Device_BytesReceived(&CDC_interface) > 0) {
+        packetByteReceived(CDC_Device_ReceiveByte(&CDC_interface));
+    }
+
     return;
 }
