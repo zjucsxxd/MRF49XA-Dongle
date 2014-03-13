@@ -164,17 +164,6 @@ void print_hex(uint16_t value)
     print_digit_hex((value & 0x000F) >>  0);
 }
 
-void Bootloader_Jump_Check(void) ATTR_INIT_SECTION(3);
-void Bootloader_Jump_Check(void)
-{
-    // If the reset source was the bootloader and the key is correct, clear it and jump to the bootloader
-    if ((MCUSR & (1 << WDRF)) && (Boot_Key == MAGIC_BOOT_KEY))
-    {
-        Boot_Key = 0;
-        ((void (*)(void))BOOTLOADER_START_ADDRESS)();
-    }
-}
-
 // Functions to set hardware control line states
 void setFlowControl_stop(void) {
     CDC_interface.State.ControlLineStates.DeviceToHost &= ~CDC_CONTROL_LINE_IN_DSR;
@@ -184,6 +173,17 @@ void setFlowControl_stop(void) {
 void setFlowControl_start(void) {
     CDC_interface.State.ControlLineStates.DeviceToHost |=  CDC_CONTROL_LINE_IN_DSR;
     CDC_Device_SendControlLineStateChange(&CDC_interface);
+}
+
+void Bootloader_Jump_Check(void) ATTR_INIT_SECTION(3);
+void Bootloader_Jump_Check(void)
+{
+    // If the reset source was the bootloader and the key is correct, clear it and jump to the bootloader
+    if ((MCUSR & (1 << WDRF)) && (Boot_Key == MAGIC_BOOT_KEY))
+    {
+        Boot_Key = 0;
+        ((void (*)(void))BOOTLOADER_START_ADDRESS)();
+    }
 }
 
 void jumpToBootloader(void)
