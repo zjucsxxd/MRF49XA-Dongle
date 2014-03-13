@@ -33,10 +33,13 @@
 static volatile uint8_t mrf_state;	// Defaults to idle
 static volatile uint8_t mrf_alive;	// Set to '1' by ISR
 
+volatile uint8_t packetCounter;
+
 // There are 2 Rx_Packet_t instances, one for reading off the air
 // and one for processing back in main. (double buffering)
 MRF_packet_t Rx_Packet_a;
 MRF_packet_t Rx_Packet_b;
+MRF_packet_t Tx_packet;
 
 // The hasPacket flag means that the finished_packet variable contains
 // a fresh data packet.  The receiving_packet always contains space for
@@ -45,8 +48,6 @@ MRF_packet_t Rx_Packet_b;
 volatile uint8_t	hasPacket;		// Initialized to 0 by default
 volatile MRF_packet_t *finished_packet;
 volatile MRF_packet_t *receiving_packet;
-
-volatile uint8_t	transmit_buffer[MRF_TX_PACKET_LEN];
 
 volatile uint16_t	mrf_status;
 
@@ -94,105 +95,127 @@ void MRF_reset(void)
     LED_PORTx &= ~(1 << LED_RX) & ~(1 << LED_TX);
 }
 
-volatile uint8_t counter;
+static inline void idle_ISR(void)
+{
+    uint8_t bl = MRF_fifo_read();
+    
+    // The first byte is the packet payload length
+    if (bl <= MRF_PAYLOAD_LEN) {
+        mrf_state  = MRF_RECEIVE_PACKET;
+        LED_PORTx |= (1 << LED_RX);
+        receiving_packet->payloadSize = bl;
+        // We've received 1 byte
+        packetCounter = 1;
+    }
+    
+    // The length doesn't make sense, so reset
+    else {
+        LED_PORTx &= ~(1 << LED_RX);
+        packetCounter = 0;
+        MRF_reset();
+        return;
+    }
+}
+
+static inline void xmit_ISR(void)
+{
+    // Test whether we're done transmitting
+    if (packetCounter >= Tx_packet.payloadSize + MRF_TX_PACKET_OVERHEAD) {
+        // Disable transmitter, enable receiver
+        RegisterSet(MRF_PMCREG | MRF_RXCEN);
+        RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
+        RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
+        RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
+        
+        // Return the state
+        mrf_state = MRF_IDLE;
+        LED_PORTx &= ~(1 << LED_TX);
+        packetCounter = 0;
+    }
+    
+    switch (packetCounter) {
+        case 0:         // First byte is 'AA' for a alternating tone
+            RegisterSet(MRF_TXBREG | 0x00AA);
+            break;
+        case 1:         // First of two synchronization bytes
+            RegisterSet(MRF_TXBREG | 0x002D);
+            break;
+        case 2:         // Second of two synchronization bytes
+            RegisterSet(MRF_TXBREG | 0x00D4);
+            break;
+        case 3:         // Size byte
+            RegisterSet(MRF_TXBREG | Tx_packet.payloadSize);
+            break;
+        case 4:         // Type byte
+            RegisterSet(MRF_TXBREG | Tx_packet.type);
+            break;
+            
+        default:        // Payload
+            // The 5 is from the preamble, 2 sync bytes, size and type bytes.
+            // Later, we'll need to include ECC calculation here.
+            RegisterSet(MRF_TXBREG | Tx_packet.payload[packetCounter - 5]);
+            break;
+    }
+    
+    packetCounter += 1;
+}
+
+static inline void rx_ISR(void)
+{
+	uint8_t bl = MRF_fifo_read();
+    
+    // Convert the packet to a linear string of bytes
+    uint8_t *packet_bytes = (uint8_t *)receiving_packet;
+    
+    packet_bytes[packetCounter++] = bl;
+    
+    // End of packet?
+    if (packetCounter >= receiving_packet->payloadSize +
+        MRF_PACKET_OVERHEAD) {
+        
+        // Reset the FIFO
+        RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
+        RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
+        
+        // Swap packet structures
+        finished_packet = receiving_packet;
+        hasPacket = 1;
+        if (receiving_packet == &Rx_Packet_a) {
+            receiving_packet =  &Rx_Packet_b;
+        } else {
+            receiving_packet =  &Rx_Packet_a;
+        }
+        
+        // Restore state
+        mrf_state = MRF_IDLE;
+        LED_PORTx &= ~(1 << LED_RX);
+        packetCounter = 0;
+        receiving_packet->payloadSize = 0;
+    }
+}
+
 ISR(MRF_IRO_VECTOR, ISR_BLOCK)
 {
-	mrf_alive = 1;
-	
-	uint8_t bl;
-	
-	// Set the CS pin for the MRF low
+	// Set the MRF's CS pin low
 	MRF_CS_PORTx &= ~(1 << MRF_CS_BIT);
-	
-	// Wait for the synchronizer
-	_delay_us(1);
+
+	// This needs to be here to delay for the synchronizer
+	mrf_alive = 1;
 	
 	// the MISO pin marks whether the FIFO needs attention
 	if (bit_is_set(SPI_MISO_PINx, SPI_MISO_BIT)) {
 		
 		switch (mrf_state) {
-			case MRF_IDLE:
-				bl = MRF_fifo_read();
-				
-                // The first byte is the packet payload length
-				if (bl <= MRF_PAYLOAD_LEN) {
-					mrf_state  = MRF_RECEIVE_PACKET;
-                    LED_PORTx |= (1 << LED_TX);
-					receiving_packet->payloadSize = bl;
-                    // We've received 1 byte
-					counter = 1;
-				}
-                
-                // The length doesn't make sense, so reset
-                else {
-					counter = 0;
-					MRF_reset();
-					return;
-				}
-                
-				break;
+			case MRF_IDLE:              // Passively receiving
+                idle_ISR();
+                break;
 
-			case MRF_TRANSMIT_PACKET:
-				// Transmit the contents of the packet
-				// (including preamble, sync, length, and dummy byte)
-				RegisterSet(MRF_TXBREG | transmit_buffer[counter++]);
-				
-				// Derivation of the +4:
-				// Preamble:      1 + (before packet)
-				// Sync word:     2 + (before packet)
-                // Pre-increment  1 =
-				// Total:         4
-
-				// Test for packet finish
-                if (counter >  (transmit_buffer[3] + 4 +
-                                MRF_PACKET_OVERHEAD)) {
-
-					// Disable transmitter, enable receiver
-					RegisterSet(MRF_PMCREG | MRF_RXCEN);
-					RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
-					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
-					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
-					
-					// Return the state
-					mrf_state = MRF_IDLE;
-                    LED_PORTx &= ~(1 << LED_TX);
-					counter = 0;
-				}
-				
-				break;
+			case MRF_TRANSMIT_PACKET:   // Actively transmitting
+                xmit_ISR();
+                break;
 								
 			case MRF_RECEIVE_PACKET:	// We've received at least the size
-                bl = MRF_fifo_read();
-
-                // Convert the packet to a linear string of bytes
-                uint8_t *packet_bytes = (uint8_t *)receiving_packet;
-                
-                packet_bytes[counter++] = bl;
-                
-				// End of packet?
-				if (counter >= receiving_packet->payloadSize +
-                               MRF_PACKET_OVERHEAD) {
-
-					// Reset the FIFO
-					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
-					RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);
-
-					// Swap packet structures
-					finished_packet = receiving_packet;
-					hasPacket = 1;
-					if (receiving_packet == &Rx_Packet_a) {
-						receiving_packet =  &Rx_Packet_b;
-					} else {
-						receiving_packet =  &Rx_Packet_a;
-					}
-					
-					// Restore state
-					mrf_state = MRF_IDLE;
-                    LED_PORTx |= (1 << LED_TX);
-					counter = 0;
-					receiving_packet->payloadSize = 0;
-				}			
-				
+				rx_ISR();
 				break;
 
 			case MRF_TRANSMIT_ZERO:
@@ -343,8 +366,8 @@ void MRF_transmit_alternating()
 	}
 	
 	mrf_state = MRF_TRANSMIT_ALT;
-    LED_PORTx |= (1 << LED_TX);
-	
+    LED_PORTx |= (1 << LED_RX);
+
 	// Enable the TX Register
 	RegisterSet(MRF_GENCREG_SET | MRF_TXDEN);
 	
@@ -422,15 +445,14 @@ void MRF_transmit_packet(MRF_packet_t *packet)
     LED_PORTx |= (1 << LED_TX);
 
 	// Initialize the constant parts of the transmit buffer
-	counter = 0;
-	transmit_buffer[0] = 0xAA;
-	transmit_buffer[1] = 0x2D;
-	transmit_buffer[2] = 0xD4;
+	packetCounter = 0;
 
-    // Copy the packet (including the fields before the payload)
+    // Copy the packet
+    Tx_packet.payloadSize = packet->payloadSize;
+    Tx_packet.type        = packet->type;
     uint8_t *packet_bytes = (uint8_t *)packet;
-    for (i = 0; i < packet->payloadSize + MRF_PACKET_OVERHEAD; i++) {
-        transmit_buffer[3 + i] = packet_bytes[i];
+    for (i = 0; i < packet->payloadSize; i++) {
+        Tx_packet.payload[i] = packet->payload[i];
     }
 
 	RegisterSet(MRF_PMCREG);					// Turn everything off

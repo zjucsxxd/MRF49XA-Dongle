@@ -58,8 +58,8 @@ typedef struct {
 #define MRF_PACKET_OVERHEAD 2
 // the maximum packet size for internal buffers
 #define MRF_PACKET_LEN      MRF_PAYLOAD_LEN + MRF_PACKET_OVERHEAD
-// Space for preamble, sync, and dummy
-#define MRF_TX_PACKET_LEN	MRF_PACKET_LEN + 4
+// Space for preamble, sync (2 bytes), length, type and dummy
+#define MRF_TX_PACKET_OVERHEAD 6
 
 // Packet based functions
 void MRF_transmit_packet(MRF_packet_t *packet);
