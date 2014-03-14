@@ -79,7 +79,8 @@ uint8_t getBootState(void)
 
 void setBootState(uint8_t newBootMode)
 {
-    eeprom_write_word(bootMode, hamming_encode(newBootMode));
+//    eeprom_write_word(bootMode, hamming_encode(newBootMode));
+    eeprom_write_word(bootMode, newBootMode);
 }
 
 void applySavedRegisters(void)

@@ -27,7 +27,9 @@ extern volatile uint16_t ticks;
 void serialTransmitPacket(void)
 {
     // Disable new serial data during this routine
-    setFlowControl_stop();
+    // This doesn't appear to be necessary,
+    // and causes extra bytes to be sent locally
+//    setFlowControl_stop();
     
     packet.payloadSize = counter;
     if (mode == SERIAL_ECC) {
@@ -39,7 +41,7 @@ void serialTransmitPacket(void)
     MRF_transmit_packet(&packet);
     counter = 0;
 
-    setFlowControl_start();
+//    setFlowControl_start();
 }
 
 // Byte received from the USB port
