@@ -10,6 +10,7 @@
 #define MRF49XA_C
 #include "MRF49XA.h"
 #include "spi.h"
+#include "hamming.h"
 
 #include <util/delay.h>
 
@@ -98,12 +99,17 @@ void MRF_reset(void)
 static inline void idle_ISR(void)
 {
     uint8_t bl = MRF_fifo_read();
-    
-    // The first byte is the packet payload length
-    if (bl <= MRF_PAYLOAD_LEN) {
+
+    // The first byte is the packet payload length, make sure it's sensical
+    if (bl <= MRF_PAYLOAD_LEN && bl > 0) {
         mrf_state  = MRF_RECEIVE_PACKET;
         LED_PORTx |= (1 << LED_RX);
+
         receiving_packet->payloadSize = bl;
+        for (int i = 0; i < bl; i++) {
+            receiving_packet->payload[i] = 0;   // Clean the previous payload
+        }
+        
         // We've received 1 byte
         packetCounter = 1;
     }
@@ -119,8 +125,18 @@ static inline void idle_ISR(void)
 
 static inline void xmit_ISR(void)
 {
+    uint8_t maxPacketCounter = 0;
+    
+    // ECC payloads are twice as large as advertised
+    if (Tx_packet.type == PACKET_TYPE_SERIAL_ECC ||
+        Tx_packet.type == PACKET_TYPE_PACKET_ECC) {
+        maxPacketCounter = (Tx_packet.payloadSize * 2) + MRF_TX_PACKET_OVERHEAD;
+    } else {
+        maxPacketCounter = Tx_packet.payloadSize + MRF_TX_PACKET_OVERHEAD;
+    }
+    
     // Test whether we're done transmitting
-    if (packetCounter >= Tx_packet.payloadSize + MRF_TX_PACKET_OVERHEAD) {
+    if (packetCounter >= maxPacketCounter) {
         // Disable transmitter, enable receiver
         RegisterSet(MRF_PMCREG | MRF_RXCEN);
         RegisterSet(MRF_GENCREG_SET | MRF_FIFOEN);
@@ -151,28 +167,75 @@ static inline void xmit_ISR(void)
             break;
             
         default:        // Payload
-            // The 5 is from the preamble, 2 sync bytes, size and type bytes.
-            // Later, we'll need to include ECC calculation here.
-            RegisterSet(MRF_TXBREG | Tx_packet.payload[packetCounter - 5]);
+            // It matters which mode we're in.
+            // If we're in an ECC mode, we transmit hamming-coded
+            // high-nibbles on high-packet
+            if (Tx_packet.type == PACKET_TYPE_SERIAL_ECC ||
+                Tx_packet.type == PACKET_TYPE_PACKET_ECC) {
+                
+                // Calculate the payload byte we're using (divide by 2)
+                uint8_t payloadByte = Tx_packet.payload[(packetCounter - 5) >> 1];
+
+                // If the payload index is odd, we're transmitting the high nibble
+                if ((packetCounter - 5) & 0x01) {
+                    RegisterSet(MRF_TXBREG | hamming_encode_nibble(payloadByte >> 4));
+                }
+
+                // Otherwise, it's the low nibble
+                else {
+                    RegisterSet(MRF_TXBREG | hamming_encode_nibble(payloadByte & 0x0F));
+                }
+                
+            } else {
+                // The 5 is from the preamble, 2 sync bytes, size and type bytes.
+                // Later, we'll need to include ECC calculation here.
+                RegisterSet(MRF_TXBREG | Tx_packet.payload[packetCounter - 5]);
+            }
+            
             break;
     }
     
     packetCounter += 1;
 }
 
+// If this ISR function is called, we've recieved the payload length and nothing else
 static inline void rx_ISR(void)
 {
 	uint8_t bl = MRF_fifo_read();
     
-    // Convert the packet to a linear string of bytes
-    uint8_t *packet_bytes = (uint8_t *)receiving_packet;
+    if (packetCounter == 1) {
+        // We're recieving the type field
+        receiving_packet->type = bl;
+        packetCounter++;
+        return;
+    }
     
-    packet_bytes[packetCounter++] = bl;
+    // We've got the type field, so we know whether it's ECC, and 2x the size
+    uint8_t maxPacketCounter = receiving_packet->payloadSize + MRF_PACKET_OVERHEAD;
+    if (receiving_packet->type == PACKET_TYPE_SERIAL_ECC ||
+        receiving_packet->type == PACKET_TYPE_PACKET_ECC) {
+        maxPacketCounter = (receiving_packet->payloadSize * 2) + MRF_PACKET_OVERHEAD;
+        
+        // Get the location into the payload field
+        uint8_t index = (packetCounter - MRF_PACKET_OVERHEAD) >> 1;
+        
+        // If the packet counter is odd, we're recieving the high nibble
+        // The packet is cleared out beforehand, so we can just or-in the new info
+        if ((packetCounter - MRF_PACKET_OVERHEAD) & 0x01) {
+            receiving_packet->payload[index] |= hamming_decode_nibble(bl) << 4;
+        }
+        // Otherwise, we're receiving the low nibble
+        else {
+            receiving_packet->payload[index] |= hamming_decode_nibble(bl) & 0x0F;
+        }
+    } else {
+        receiving_packet->payload[packetCounter - MRF_PACKET_OVERHEAD] = bl;
+    }
+
+    packetCounter++;
     
     // End of packet?
-    if (packetCounter >= receiving_packet->payloadSize +
-        MRF_PACKET_OVERHEAD) {
-        
+    if (packetCounter >= maxPacketCounter) {
         // Reset the FIFO
         RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser);
         RegisterSet(MRF_FIFOSTREG_SET | fiforstregUser | MRF_FSCF);

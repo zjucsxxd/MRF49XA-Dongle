@@ -206,7 +206,7 @@ init(void) {
     sei();    
 }
 
-const uint8_t pingString[]          PROGMEM = "PING\n\r";
+const uint8_t pingString[]          PROGMEM = "PINGING: ";
 
 const uint8_t typeSerialString[]    PROGMEM = "\n\rSerial, ";
 const uint8_t typeSerialECCString[] PROGMEM = "\n\rSerial ECC, ";
@@ -306,6 +306,7 @@ int main(void) {
                     case TEST_PING:
                         MRF_transmit_packet(rx_packet);
                         sendStringP(pingString);
+                        printPacket(rx_packet);
                         break;
                     case CAPTURE:
                         printPacket(rx_packet);

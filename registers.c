@@ -63,7 +63,8 @@ void setEEPROMdefaults(void)
 
 uint8_t getBootState(void)
 {
-    uint8_t mode = eeprom_read_word(bootMode);
+//    uint8_t mode = eeprom_read_word(bootMode);
+    uint8_t mode = hamming_decode_byte(eeprom_read_word(bootMode));
     switch(mode) {
         case SERIAL:
         case SERIAL_ECC:
@@ -79,8 +80,8 @@ uint8_t getBootState(void)
 
 void setBootState(uint8_t newBootMode)
 {
-//    eeprom_write_word(bootMode, hamming_encode(newBootMode));
-    eeprom_write_word(bootMode, newBootMode);
+    eeprom_write_word(bootMode, hamming_encode_byte(newBootMode));
+//    eeprom_write_word(bootMode, newBootMode);
 }
 
 void applySavedRegisters(void)

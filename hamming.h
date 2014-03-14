@@ -11,7 +11,10 @@
 
 #include <stdint.h>
 
-uint16_t hamming_encode(uint8_t  byte);
-uint8_t  hamming_decode(uint16_t symbol);
+uint8_t  hamming_encode_nibble(uint8_t nibble);
+uint16_t hamming_encode_byte(uint8_t  byte);
+
+uint8_t  hamming_decode_nibble(uint8_t byte);
+uint8_t  hamming_decode_byte(uint16_t symbol);
 
 #endif

@@ -13,6 +13,8 @@
 
     const uint8_t generator[16] PROGMEM = {
 #else
+#define pgm_read_byte(value) *value
+        
     const uint8_t generator[16] = {
 #endif
     0x00,
@@ -80,17 +82,30 @@
 //  5 0s, 5 7s, 5 Bs, 5 Cs, 5 Ds, 5 As, 5 6s, 5 1s, 5 Es, 5 9s, 5 5s, 5 2s, 5 3s, 5 4s, 5 8s, 5 Fs
 };
 
-uint16_t hamming_encode(uint8_t  byte)
+uint8_t hamming_encode_nibble(uint8_t nibble)
+{
+    return pgm_read_byte(&generator[nibble & 0x0F]);
+}
+
+uint16_t hamming_encode_byte(uint8_t  byte)
 {
     uint16_t temp = 0x00;
     
-    temp |= generator[ (byte >> 4) & 0xF ] << 8;
-    temp |= generator[  byte       & 0xF ];
+    temp |= pgm_read_byte(&generator[ (byte >> 4) & 0xF ]) << 8;
+    temp |= pgm_read_byte(&generator[  byte       & 0xF ]);
     
     return temp;
 }
 
-uint8_t  hamming_decode(uint16_t symbol)
+uint8_t  hamming_decode_nibble(uint8_t byte)
 {
-    return ((check[(symbol >> 8) & 0xFF] & 0xF) << 4) | (check[symbol & 0xFF] & 0xF);
+    return pgm_read_byte(&check[byte]) & 0x0F;
+}
+
+uint8_t  hamming_decode_byte(uint16_t symbol)
+{
+    uint8_t highNibble = (pgm_read_byte(&check[(symbol >> 8) & 0xFF]) & 0xF) << 4;
+    uint8_t lowNibble  =  pgm_read_byte(&check[ symbol & 0xFF ]) & 0xF;
+    
+    return highNibble | lowNibble;
 }

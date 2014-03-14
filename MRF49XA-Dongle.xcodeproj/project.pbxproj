@@ -114,6 +114,8 @@
 				3C6E7988147DFCF5006A7D8C /* MRF49XA_definitions.h */,
 				3C6E7989147DFCF5006A7D8C /* MRF49XA.c */,
 				3C6E798A147DFCF5006A7D8C /* MRF49XA.h */,
+				3C1A3C5518AAE69C00BD8249 /* hamming.h */,
+				3C1A3C4D18AADE4C00BD8249 /* hamming.c */,
 			);
 			name = RF;
 			sourceTree = "<group>";
@@ -181,8 +183,6 @@
 		3CC0204218CFCE770046E8C1 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
-				3C1A3C5518AAE69C00BD8249 /* hamming.h */,
-				3C1A3C4D18AADE4C00BD8249 /* hamming.c */,
 				3CC0204118CFCE720046E8C1 /* packet.h */,
 				3CC0204318CFCF860046E8C1 /* packet.c */,
 				3CC0204518CFD1D50046E8C1 /* serial.h */,

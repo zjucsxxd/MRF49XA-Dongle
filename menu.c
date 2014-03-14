@@ -34,7 +34,9 @@ MRF49XA Dongle top menu\n\r\
 2) Test menu\n\r\
 3) Enter transparent serial mode\n\r\
 4) Enter packet serial mode\n\r\
-7x) Save boot state, set x to new start mode (0, 3 or 4 allowed)\n\r\
+5) Enter transparent serial mode with ECC\n\r\
+6) Enter packet serial mode with ECC\n\r\
+7x) Save boot state, set x to new start mode (0, 3, 4, 5 or 6 allowed)\n\r\
 8) Firmware Upload (DFU)\n\r\
 ?) Print this menu\n\r\
 > ";
@@ -297,34 +299,39 @@ x) Exit this menu (will stop testing function)
             mode = TEST_ALT;
             MRF_transmit_alternating();
             sendStringP(transmittingString);
-            return MENU_TOP;
+            break;
             
         case '2':
             CDC_Device_SendByte(&CDC_interface, byte);
             mode = TEST_ONE;
             MRF_transmit_one();
             sendStringP(transmittingString);
-            return MENU_TOP;
+            break;
             
         case '3':
             CDC_Device_SendByte(&CDC_interface, byte);
             mode = TEST_ZERO;
             MRF_transmit_zero();
             sendStringP(transmittingString);
-            return MENU_TOP;
+            break;
             
         case '4':
             CDC_Device_SendByte(&CDC_interface, byte);
+            sendStringP(newLineString);
+            CDC_Device_Flush(&CDC_interface);
             mode = TEST_PING;
-            return MENU_TOP;
+            break;
 
         case '5':
             CDC_Device_SendByte(&CDC_interface, byte);
+            sendStringP(newLineString);
+            CDC_Device_Flush(&CDC_interface);
             mode = CAPTURE;
-            return MENU_TEST;
+            break;
 
         case 'x':
-            CDC_Device_SendByte(&CDC_interface, byte);
+            sendStringP(newLineString);
+            CDC_Device_Flush(&CDC_interface);
             MRF_reset();
             mode = MENU;
             return MENU_TOP;
@@ -349,6 +356,8 @@ x) Exit this menu (will stop testing function)
             CDC_Device_Flush(&CDC_interface);
             break;
     }
+    
+    return MENU_TEST;
 }
 
 enum menu_item menuBootHandleByte(uint8_t byte)
