@@ -57,9 +57,7 @@ void packetByteReceived(uint8_t byte)
     // If the counter equals the packet size, transmit
     if (counter >= packet.payloadSize + MRF_PACKET_OVERHEAD) {
         // Disable new serial data during this routine
-        setFlowControl_stop();
         MRF_transmit_packet(&packet);
-        setFlowControl_start();
         counter = 0;
     }
 

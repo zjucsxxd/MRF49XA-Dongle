@@ -141,6 +141,7 @@ SRC = $(TARGET).c                                                 \
       registers.c                                                 \
       serial.c                                                    \
       packet.c                                                    \
+      usbSerial.c                                                 \
       Descriptors.c                                               \
       MRF49XA.c                                                   \
 	  $(LUFA_SRC_USB)                                             \

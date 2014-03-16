@@ -26,11 +26,6 @@ extern volatile uint16_t ticks;
 
 void serialTransmitPacket(void)
 {
-    // Disable new serial data during this routine
-    // This doesn't appear to be necessary,
-    // and causes extra bytes to be sent locally
-//    setFlowControl_stop();
-    
     packet.payloadSize = counter;
     if (mode == SERIAL_ECC) {
         packet.type = PACKET_TYPE_SERIAL_ECC;
@@ -40,8 +35,6 @@ void serialTransmitPacket(void)
     
     MRF_transmit_packet(&packet);
     counter = 0;
-
-//    setFlowControl_start();
 }
 
 // Byte received from the USB port
@@ -71,6 +64,12 @@ void serialMainLoop(void)
         serialByteReceved(CDC_Device_ReceiveByte(&CDC_interface));
     }
     
+    if (UCSR1A & (1 << RXC1)) {
+        sendDeadline = ticks + TICKS_BYTE_DEADLINE;
+        uint8_t byte = UDR1;
+        serialByteReceved(byte);
+    }
+
     // If we've waited too long for a new byte send what we have so far
     if (counter > 0) {
         if (ticks > sendDeadline) {

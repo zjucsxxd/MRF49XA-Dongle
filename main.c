@@ -37,6 +37,7 @@
 #include "registers.h"
 #include "packet.h"
 #include "serial.h"
+#include "usbSerial.h"
 
 #include <avr/wdt.h>
 #include <avr/sfr_defs.h>
@@ -112,11 +113,6 @@ bool configured;
 void EVENT_USB_Device_Connect(void)
 {
     LED_PORTx = (1 << LED_POWER);
-    
-    // Print a single character immedately
-    // This is a hint to the user (or script) that the device
-    // has connected.
-    CDC_Device_SendByte(&CDC_interface, '>');
 }
 
 void EVENT_USB_Device_Disconnect(void)
@@ -185,10 +181,6 @@ init(void) {
     // Initialize the transceiver
     MRF_init();
     
-    // Load the saved registers
-    applySavedRegisters();
-    MRF_reset();
-
     // Initialize the USB system
 	USB_Init();
     
@@ -202,8 +194,23 @@ init(void) {
     // Create the CDC serial stream device
     CDC_Device_CreateStream(&CDC_interface, &USB_USART);
     
+    // Setup the internal UART
+    // Setup the DDRD for RXD and TXD
+    DDRD &= ~(1 << 2);
+    DDRD |=  (1 << 3);
+    
+    // set baud rate (8000000 / (16 * 4800)) - 1 = 103, for 4800 baud
+    UBRR1H = 0;
+    UBRR1L = 103;
+    
+    // Enable UART receiver and transmitter.
+    UCSR1B = (1 << RXEN1) | (1 << TXEN1);
+    
+    // Set frame format: asynchronous, 8data, no parity, 1stop bit
+    UCSR1C = (1 << UCSZ11)| (1 << UCSZ10);
+    
     // Enable interrupts
-    sei();    
+    sei();
 }
 
 const uint8_t pingString[]          PROGMEM = "PINGING: ";
@@ -274,6 +281,10 @@ int main(void) {
     // Initalize the system
     init();
     
+    // Load the saved registers
+    applySavedRegisters();
+    MRF_reset();
+    
     // Get the default boot state
     mode = getBootState();
     
@@ -290,7 +301,7 @@ int main(void) {
             mode == TEST_PING ) {
 
             // Handle any new bytes from the USB system
-            // These functions can be assumed to return imediately.
+            // These functions can be assumed to return immediately.
             if (CDC_Device_BytesReceived(&CDC_interface) > 0) {
                 byte = CDC_Device_ReceiveByte(&CDC_interface);
 
@@ -318,7 +329,7 @@ int main(void) {
             }
         }
         
-        // These modes involve listening to the RF interface and printing results
+        // These modes are responsible for actually using the RF interface
         else {
             switch (mode) {
                 case PACKET:
@@ -330,7 +341,11 @@ int main(void) {
                 case SERIAL_ECC:
                     serialMainLoop();
                     break;
-
+                    
+                case USB_SERIAL:
+                    usbSerialMainLoop();
+                    break;
+                    
                 default:
                     // This would catch any weird modes
                     sendStringP(invalidModeString);

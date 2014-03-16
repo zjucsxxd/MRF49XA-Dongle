@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3C1A3C4E18AADE4C00BD8249 /* hamming.c in Sources */ = {isa = PBXBuildFile; fileRef = 3C1A3C4D18AADE4C00BD8249 /* hamming.c */; };
 		3C4A304E14BFAE62004C7B90 /* hamming_test.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 3C4A304D14BFAE62004C7B90 /* hamming_test.1 */; };
+		3C8488B418D50DF50016433B /* usbSerial.c in Sources */ = {isa = PBXBuildFile; fileRef = 3C8488B318D50DF50016433B /* usbSerial.c */; };
 		3CC0204918CFD3140046E8C1 /* enc_dec_test.c in Sources */ = {isa = PBXBuildFile; fileRef = 3CC0204818CFD3140046E8C1 /* enc_dec_test.c */; };
 /* End PBXBuildFile section */
 
@@ -50,6 +51,8 @@
 		3C6E798C147DFCF5006A7D8C /* spi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spi.h; sourceTree = "<group>"; };
 		3C6E798D147F6AD7006A7D8C /* Descriptors.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Descriptors.c; sourceTree = "<group>"; };
 		3C6E798E147F6AD7006A7D8C /* Descriptors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Descriptors.h; sourceTree = "<group>"; };
+		3C8488B218D50DE20016433B /* usbSerial.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = usbSerial.h; sourceTree = "<group>"; };
+		3C8488B318D50DF50016433B /* usbSerial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = usbSerial.c; sourceTree = "<group>"; };
 		3CACBE1D18AEC651001A2A9E /* tuning.numbers */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = tuning.numbers; sourceTree = "<group>"; };
 		3CACE1941478B0B800CF261D /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		3CC0203F18CFBD460046E8C1 /* out.eep */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = out.eep; sourceTree = "<group>"; };
@@ -187,6 +190,8 @@
 				3CC0204318CFCF860046E8C1 /* packet.c */,
 				3CC0204518CFD1D50046E8C1 /* serial.h */,
 				3CC0204618CFD1E80046E8C1 /* serial.c */,
+				3C8488B218D50DE20016433B /* usbSerial.h */,
+				3C8488B318D50DF50016433B /* usbSerial.c */,
 			);
 			name = Protocols;
 			sourceTree = "<group>";
@@ -285,6 +290,7 @@
 			files = (
 				3C1A3C4E18AADE4C00BD8249 /* hamming.c in Sources */,
 				3CC0204918CFD3140046E8C1 /* enc_dec_test.c in Sources */,
+				3C8488B418D50DF50016433B /* usbSerial.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -36,8 +36,9 @@ MRF49XA Dongle top menu\n\r\
 4) Enter packet serial mode\n\r\
 5) Enter transparent serial mode with ECC\n\r\
 6) Enter packet serial mode with ECC\n\r\
-7x) Save boot state, set x to new start mode (0, 3, 4, 5 or 6 allowed)\n\r\
-8) Firmware Upload (DFU)\n\r\
+7) Enter USB Serial converter mode\n\r\
+8x) Save boot state, set x to new start mode (0, 3, 4, 5, 6 or 7 allowed)\n\r\
+9) Firmware Upload (DFU)\n\r\
 ?) Print this menu\n\r\
 > ";
 
@@ -68,6 +69,7 @@ const uint8_t oldStartupString[]   PROGMEM = "Old startup Mode: ";
 const uint8_t newStartupString[]   PROGMEM = "New startup Mode: ";
 const uint8_t serialString[]    PROGMEM = "Transparent Serial";
 const uint8_t packetString[]    PROGMEM = "Packet Serial";
+const uint8_t usbString[]    PROGMEM = "USB Serial";
 const uint8_t menuString[]      PROGMEM = "Interactive";
 const uint8_t ECCString[]       PROGMEM = " with ECC";
 const uint8_t editString[]      PROGMEM = "Enter new value: 0x";
@@ -150,8 +152,9 @@ MRF49XA Dongle top menu
 4) Enter packet serial mode
 5) Enter transparent serial mode with ECC
 6) Enter packet serial mode with ECC
-7x) Save boot state, set x to new start mode (0, 3, 4, 5, or 6 allowed)
-8) Firmware Upload (DFU)
+7) Enter USB serial converter mode
+8x) Save boot state, set x to new start mode (0, 3, 4, 5, 6 or 7 allowed)
+9) Firmware Upload (DFU)
 ?) Print this menu
 >
 */
@@ -187,13 +190,18 @@ MRF49XA Dongle top menu
             CDC_Device_Flush(&CDC_interface);
             mode = PACKET_ECC;
             return MENU_EXIT;
-            
+
         case '7':
+            CDC_Device_SendByte(&CDC_interface, byte);
+            CDC_Device_Flush(&CDC_interface);
+            return MENU_EXIT;
+
+        case '8':
             CDC_Device_SendByte(&CDC_interface, byte);
             CDC_Device_Flush(&CDC_interface);
             return MENU_BOOT;
 
-        case '8':
+        case '9':
             jumpToBootloader();
             break;
             
@@ -286,7 +294,6 @@ enum menu_item menuTestHandleByte(uint8_t byte)
 1) Transmit alternating ones and zeros
 2) Transmit ones
 3) Transmit zeros
- 
 4) Echo received packets
 5) Print received packets
 6) Reset the transciever (stop transmitting)
@@ -401,20 +408,25 @@ enum menu_item menuBootHandleByte(uint8_t byte)
             break;
 
         case '4':
+            sendStringP(packetString);
+            setBootState(PACKET);
+            break;
+            
+        case '5':
             sendStringP(serialString);
             sendStringP(ECCString);
             setBootState(SERIAL_ECC);
-            break;
-
-        case '5':
-            sendStringP(packetString);
-            setBootState(PACKET);
             break;
 
         case '6':
             sendStringP(packetString);
             sendStringP(ECCString);
             setBootState(PACKET_ECC);
+            break;
+
+        case '7':
+            sendStringP(usbString);
+            setBootState(USB_SERIAL);
             break;
 
         default:

@@ -20,7 +20,8 @@ enum device_mode {
     TEST_ALT   = 7,
     TEST_ZERO  = 8,
     TEST_ONE   = 9,
-    TEST_PING  = 10
+    TEST_PING  = 10,
+    USB_SERIAL = 11
 };
 
 #endif
